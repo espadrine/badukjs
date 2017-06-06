@@ -38,6 +38,17 @@
     generate() {
       // TODO
     },
+    // Run the SGF file on the board.
+    run() {
+      for (var i = 0; i < this.content.length; i++) {
+        var node = this.content[i];
+        if (node["B"] !== undefined) {
+          this.board.set(node["B"][0], node["B"][1], Board.BLACK);
+        } else if (node["W"] !== undefined) {
+          this.board.set(node["W"][0], node["W"][1], Board.WHITE);
+        }
+      }
+    },
   };
 
   // options:
