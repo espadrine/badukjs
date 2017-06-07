@@ -4,4 +4,7 @@ bundle.js: src/board.js src/sgf.js
 clean:
 	rm bundle.js
 
-.PHONY: clean
+test:
+	node test/board.js
+
+.PHONY: clean test
