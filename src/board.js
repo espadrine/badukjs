@@ -31,6 +31,12 @@
     this.leadsToLadderEscape = false;
   }
 
+  Intersection.prototype = {
+    toString: function() {
+      return boardCoordFromNum(this.x) + boardCoordFromNum(this.y);
+    },
+  };
+
   function Group(board, intersections) {
     this.board = board;
     this.color = Board.EMPTY;
@@ -189,6 +195,38 @@
       }
       return true;
     },
+
+    toString: function() {
+      var rows = "  ";
+      for (var i = 0; i < this.size; i++) {
+        rows += boardCoordFromNum(i);
+      }
+      rows += "\n ┌";
+      for (var i = 0; i < this.size; i++) {
+        rows += "─";
+      }
+      rows += "┐\n";
+      for (var y = 0; y < this.size; y++) {
+        rows += boardCoordFromNum(y) + "│";
+        for (var x = 0; x < this.size; x++) {
+          var intersection = this.get(x, y);
+          if (intersection.color === Board.EMPTY) {
+            rows += " ";
+          } else if (intersection.color === Board.BLACK) {
+            rows += "●";
+          } else if (intersection.color === Board.WHITE) {
+            rows += "○";
+          }
+        }
+        rows += "│\n";
+      }
+      rows += " └";
+      for (var i = 0; i < this.size; i++) {
+        rows += "─";
+      }
+      rows += "┘";
+      return rows;
+    },
   };
 
   Board.EMPTY = 0;
@@ -203,6 +241,12 @@
     }
   }
   Board.stringFromColor = stringFromColor;
+
+  function boardCoordFromNum(number) {
+    if (number < 26) { return String.fromCharCode(97 + number); }
+    else { return String.fromCharCode(65 + number - 26); }
+  }
+  Board.boardCoordFromNum = boardCoordFromNum;
 
   exports.Board = Board;
 
