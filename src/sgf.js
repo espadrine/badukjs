@@ -40,12 +40,14 @@
     },
     // Run the SGF file on the board.
     run() {
-      for (var i = 0; i < this.content.length; i++) {
-        var node = this.content[i];
+      var sequence = this.content[0].sequence;
+      for (var i = 0; i < sequence.length; i++) {
+        var node = sequence[i];
+        // FIXME: execute passes correctly.
         if (node["B"] !== undefined) {
-          this.board.set(node["B"][0], node["B"][1], Board.BLACK);
+          this.board.play(node["B"][0], node["B"][1]);
         } else if (node["W"] !== undefined) {
-          this.board.set(node["W"][0], node["W"][1], Board.WHITE);
+          this.board.play(node["W"][0], node["W"][1]);
         }
       }
     },
