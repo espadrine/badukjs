@@ -19,7 +19,7 @@
     // options:
     //   - filename: name of the SGF file.
     //   - error: function(string) called for each error.
-    parse(source, options) {
+    parse: function(source, options) {
       options = options || {};
       var parser = new SGFParser(source, options);
       if (options.error !== undefined) {
@@ -35,19 +35,31 @@
       }
       this.board = new Board({size: size, komi: komi});
     },
-    generate() {
+    generate: function() {
       // TODO
     },
+    isPassMove: function(move) {
+      return (move[0] === undefined) ||
+        // Compatibility with FF[3].
+        (move[0] >= this.board.size);
+    },
     // Run the SGF file on the board.
-    run() {
+    run: function() {
       var sequence = this.content[0].sequence;
       for (var i = 0; i < sequence.length; i++) {
         var node = sequence[i];
-        // FIXME: execute passes correctly.
         if (node["B"] !== undefined) {
-          this.board.play(node["B"][0], node["B"][1]);
+          if (this.isPassMove(node["B"])) {
+            this.board.pass();
+          } else {
+            this.board.play(node["B"][0], node["B"][1]);
+          }
         } else if (node["W"] !== undefined) {
-          this.board.play(node["W"][0], node["W"][1]);
+          if (this.isPassMove(node["W"])) {
+            this.board.pass();
+          } else {
+            this.board.play(node["W"][0], node["W"][1]);
+          }
         }
       }
     },

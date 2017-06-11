@@ -188,12 +188,18 @@
         });
       });
 
-      if (self.nextPlayingColor === Board.BLACK) {
-        self.nextPlayingColor = Board.WHITE;
-      } else {
-        self.nextPlayingColor = Board.BLACK;
-      }
+      self.nextTurn();
       return true;
+    },
+
+    pass: function() { this.nextTurn(); },
+
+    nextTurn: function() {
+      if (this.nextPlayingColor === Board.BLACK) {
+        this.nextPlayingColor = Board.WHITE;
+      } else {
+        this.nextPlayingColor = Board.BLACK;
+      }
     },
 
     toString: function() {

@@ -6,5 +6,6 @@ clean:
 
 test:
 	node test/board.js
+	node test/sgf.js
 
 .PHONY: clean test
