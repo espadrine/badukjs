@@ -19,3 +19,24 @@ var Board = Baduk.Board;
   assert.equal(sgf.board.get(19, 19), undefined);
   assert.equal(sgf.board.nextPlayingColor, Board.WHITE);
 }
+
+// Test metadata.
+{
+  var sgf = new SGF();
+  var sgfContent = `
+    (;GM[1]
+    FF[4]
+    SZ[19]
+    PW[sai2004]
+    WR[7d]
+    PB[ponking66]
+    BR[4d]
+    DT[2007-01-01]
+    PC[The KGS Go Server at http://www.gokgs.com/]
+    KM[0.50]
+    RE[B+1.50]
+    RU[Japanese]OT[3x30 byo-yomi]CA[UTF-8]ST[2]AP[CGoban:3]TM[2400]HA[3]AB[pd][dp][pp]
+    ;W[ce])`;
+  sgf.parse(sgfContent, { error: function(err) { throw err; }});
+  sgf.run();
+}

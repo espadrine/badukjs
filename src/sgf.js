@@ -80,23 +80,23 @@
   }
 
   SGFParser.prototype = {
-    read(n) {
+    read: function(n) {
       n = (n === undefined)? 1: +n;
       var slice = this.source.slice(this.tokEnd, this.tokEnd + n);
       this.tokEnd += n;
       return slice;
     },
-    peek() { return this.source[this.tokEnd]; },
-    skip() { this.read(); this.consumeToken(); },
-    skipMatching(regexp) {
+    peek: function() { return this.source[this.tokEnd]; },
+    skip: function() { this.read(); this.consumeToken(); },
+    skipMatching: function(regexp) {
       while (regexp.test(this.peek())) { this.read(); }
       this.consumeToken();
     },
-    skipWhitespace() { this.skipMatching(/\s/); },
-    token() {
+    skipWhitespace: function() { this.skipMatching(/\s/); },
+    token: function() {
       return this.source.slice(this.tokStart, this.tokEnd);
     },
-    consumeToken() {
+    consumeToken: function() {
       var token = this.token();
       for (var i = 0; i < token.length; i++) {
         if (token[i] === "\n") {
@@ -107,12 +107,12 @@
       this.tokStart = this.tokEnd;
       return token;
     },
-    error(msg) {
+    error: function(msg) {
       this.errors.push(this.filename + ":" + this.line + ":" + this.col + ": "
         + msg);
     },
     // [gameTree, …]
-    parse() {
+    parse: function() {
       var gameTrees = [];
       do {
         var gameTree = this.parseGameTree();
@@ -122,7 +122,8 @@
       return gameTrees;
     },
     // {sequence, gameTrees}
-    parseGameTree() {
+    parseGameTree: function() {
+      this.skipWhitespace();
       if (this.peek() === "(") {
         this.skip();
         var sequence = this.parseSequence();
@@ -143,7 +144,8 @@
       }
     },
     // [node, …]
-    parseSequence() {
+    parseSequence: function() {
+      this.skipWhitespace();
       var nodes = [];
       do {
         var node = this.parseNode();
@@ -153,8 +155,7 @@
       return nodes;
     },
     // {identifier: value}
-    parseNode() {
-      this.skipWhitespace();
+    parseNode: function() {
       if (this.peek() === ";") {
         this.skip();
         this.skipWhitespace();
@@ -164,13 +165,14 @@
           if (property !== undefined) {
             properties[property.identifier] = property.value;
           }
+          this.skipWhitespace();
         }
         return properties;
       } else {
         this.error("Expected a `;` starting the node, got `" + this.peek() + "`");
       }
     },
-    typeFromPropIdent(identifier) {
+    typeFromPropIdent: function(identifier) {
       switch (identifier) {
         case 'B':
         case 'W': return IDENT_MOVE;
@@ -242,13 +244,13 @@
         case 'FG': return IDENT_NUMBER_SIMPLETEXT;
       }
     },
-    propIdentTypeIsList(type) {
+    propIdentTypeIsList: function(type) {
       return (type === IDENT_ELIST_POINT) ||
         (type === IDENT_LIST_POINT_POINT) ||
         (type === IDENT_LIST_POINT_SIMPLETEXT);
     },
     // {identifier, value}
-    parseProperty() {
+    parseProperty: function() {
       this.skipWhitespace();
       var identifier = this.parsePropIdent();
       var type = this.typeFromPropIdent(identifier);
@@ -262,19 +264,19 @@
           else { value = propValue; }
         }
         this.skipWhitespace();
+        if (this.peek() === "]") {
+          this.skip();
+        } else {
+          this.error("Expected a `]` ending the property, got `" + this.peek() + "`");
+        }
       } while (this.peek() === "[");
-      if (this.peek() === "]") {
-        this.skip();
-      } else {
-        this.error("Expected a `]` ending the property, got `" + this.peek() + "`");
-      }
       return { identifier: identifier, value: value };
     },
-    parsePropIdent() {
+    parsePropIdent: function() {
       while (/^[A-Z]$/.test(this.peek())) { this.read(); }
       return this.consumeToken();
     },
-    parsePropValue(type) {
+    parsePropValue: function(type) {
       if (this.peek() === "[") {
         this.skip();
         return this.parseCValueType(type);
@@ -283,7 +285,7 @@
           this.peek() + "`");
       }
     },
-    parseCValueType(type) {
+    parseCValueType: function(type) {
       if (type === IDENT_MOVE) {
         if (this.peek() === "]") { return []; }
         return this.parsePoint();
@@ -356,12 +358,12 @@
         this.error("Invalid property value type " + type);
       }
     },
-    parsePoint() {
+    parsePoint: function() {
       var x = this.parseCoordinate();
       var y = this.parseCoordinate();
       return [x, y];
     },
-    parseCoordinate() {
+    parseCoordinate: function() {
       if (/[a-z]/.test(this.peek())) {
         var char = this.read();
         this.consumeToken();
@@ -374,7 +376,7 @@
         this.error("Invalid coordinate '" + this.read() + "'");
       }
     },
-    parseColor() {
+    parseColor: function() {
       if (/[BW]/.test(this.peek())) {
         var color = this.read();
         this.consumeToken();
@@ -383,7 +385,7 @@
         this.error("Unknown color '" + this.read() + "'");
       }
     },
-    parseDouble() {
+    parseDouble: function() {
       if (/[12]/.test(this.peek())) {
         var double = +this.read();
         this.consumeToken();
@@ -392,7 +394,7 @@
         this.error("Unknown double '" + this.read() + "'");
       }
     },
-    parseNumber() {
+    parseNumber: function() {
       var sign = 1;
       if (/^[\+\-]$/.test(this.peek())) {
         if (this.read() === "-") { sign = -1; }
@@ -405,7 +407,7 @@
       this.consumeToken();
       return sign * number;
     },
-    parseReal() {
+    parseReal: function() {
       var number = this.parseNumber();
       var sign = (number >= 0)? 1: -1;
       if (this.peek() === ".") {
@@ -419,7 +421,7 @@
       this.consumeToken();
       return number;
     },
-    parseText(options) {
+    parseText: function(options) {
       options = options || {};
       var simple = !!options.simple;
       var composed = !!options.composed;

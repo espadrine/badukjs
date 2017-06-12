@@ -7,7 +7,7 @@ process.stdin.on('readable', function() {
 });
 process.stdin.on('end', function() {
   var sgf = new Baduk.SGF();
-  sgf.parse(sgfContent, {error: function(err) { console.error(err.message); }});
+  sgf.parse(sgfContent, {error: function(err) { console.error(err); }});
   sgf.run();
   console.log(sgf.board.toString());
 });
