@@ -75,7 +75,7 @@
   //   - size: typically 19.
   //   - komi: floating-point number.
   function Board(options) {
-    options = options | {};
+    options = options || {};
     this.size = +options.size || 19;
     this.komi = +options.komi || 7.5;
     this.board = new Array(this.size * this.size);
@@ -89,13 +89,42 @@
   }
 
   Board.prototype = {
+    // Is this intersection valid?
+    has: function(x, y) {
+      return y >= 0 && x >= 0 && y < this.size && x < this.size;
+    },
+    directGet: function(x, y) { return this.board[x + y * this.size]; },
+    directSet: function(x, y, color) {
+      this.board[x + y * this.size].color = color;
+    },
     // x, y: integer positions of an intersection on the board.
     get: function(x, y) {
-      if (y < 0 || x < 0 || y >= this.size || x >= this.size) { return; }
-      return this.board[x + y * this.size];
+      if (this.has(x, y)) { return this.directGet(x, y); }
     },
-    set: function(x, y, color) { this.board[x + y * this.size].color = color; },
+    set: function(x, y, color) {
+      if (this.has(x, y)) {
+        this.directSet(x, y, color);
+        if (color !== Board.EMPTY) {
+          var intersection = this.directGet(x, y);
+          var surrounding = this.surrounding(x, y);
+          var ownSurroundingGroups = [];
+          surrounding.forEach(function(neighbor) {
+            if (neighbor.color === color) {
+              ownSurroundingGroups.push(neighbor.group);
+            }
+          });
+          this.mergeStoneInGroups(intersection, ownSurroundingGroups);
+        }
+      }
+    },
+    // list: array of [row number, column number].
+    setList: function(list, color) {
+      for (var i = 0; i < list.length; i++) {
+        this.set(list[i][0], list[i][1], color);
+      }
+    },
 
+    // Create a new group that is the union of the given groups.
     mergeGroups: function(groups) {
       var intersections = [];
       groups.forEach(function(group) {
@@ -104,6 +133,17 @@
         });
       });
       return new Group(this, intersections);
+    },
+
+    // Add a stone to a list of groups (typically, its surrounding groups).
+    mergeStoneInGroups: function(intersection, ownSurroundingGroups) {
+      var currentGroup = this.mergeGroups(ownSurroundingGroups);
+      currentGroup.addIntersection(intersection);
+      for (var i = 0; i < ownSurroundingGroups.length; i++) {
+        var group = ownSurroundingGroups[i];
+        this.groups.delete(group);
+      };
+      this.groups.add(currentGroup);
     },
 
     surrounding: function(x, y) {
@@ -119,22 +159,21 @@
       return neighbors;
     },
 
-    // Place a stone.
+    // Place a stone. Returns true if the move was valid.
     play: function(x, y) {
       var self = this;
-      var intersection = self.get(x, y);
+      if (!this.has(x, y)) { return false; }
+      var intersection = self.directGet(x, y);
       var color = self.nextPlayingColor;
-      if (intersection === undefined || intersection.color !== Board.EMPTY) {
-        return false;
-      }
-      self.set(x, y, color);
+      if (intersection.color !== Board.EMPTY) { return false; }
+      self.directSet(x, y, color);
 
       // Get surrounding groups.
       var surrounding = self.surrounding(x, y);
       var surroundingGroups = surrounding.map(function(neighbor) {
-        if (neighbor.color === Board.EMPTY) { return; }
+        if (neighbor.color === Board.EMPTY) { return null; }
         return neighbor.group;
-      }).filter(function(group) { return group !== undefined; });
+      }).filter(function(group) { return group !== null; });
       var ownSurroundingGroups = surroundingGroups.filter(function(group) {
         return group.color === color;
       });
@@ -155,18 +194,12 @@
         }) && emptyNeighbors.length === 0;
         if (isKillingOwnGroup) {
           // Undo the insertion of a stone.
-          self.set(x, y, Board.EMPTY);
+          self.directSet(x, y, Board.EMPTY);
           return false;
         }
       }
 
-      // Group merges.
-      var currentGroup = self.mergeGroups(ownSurroundingGroups);
-      currentGroup.addIntersection(intersection);
-      ownSurroundingGroups.forEach(function(group) {
-        self.groups.delete(group);
-      });
-      self.groups.add(currentGroup);
+      self.mergeStoneInGroups(intersection, ownSurroundingGroups);
 
       enemySurroundingGroups.forEach(function(group) {
         group.liberties.delete(intersection);
@@ -215,7 +248,7 @@
       for (var y = 0; y < this.size; y++) {
         rows += boardCoordFromNum(y) + "│";
         for (var x = 0; x < this.size; x++) {
-          var intersection = this.get(x, y);
+          var intersection = this.directGet(x, y);
           if (intersection.color === Board.EMPTY) {
             rows += " ";
           } else if (intersection.color === Board.BLACK) {

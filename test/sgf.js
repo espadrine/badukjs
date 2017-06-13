@@ -26,7 +26,7 @@ var Board = Baduk.Board;
   var sgfContent = `
     (;GM[1]
     FF[4]
-    SZ[19]
+    SZ[18]
     PW[sai2004]
     WR[7d]
     PB[ponking66]
@@ -38,5 +38,38 @@ var Board = Baduk.Board;
     RU[Japanese]OT[3x30 byo-yomi]CA[UTF-8]ST[2]AP[CGoban:3]TM[2400]HA[3]AB[pd][dp][pp]
     ;W[ce])`;
   sgf.parse(sgfContent, { error: function(err) { throw err; }});
+  assert.equal(sgf.content[0].sequence[0]["GM"], 1);
+  assert.equal(sgf.content[0].sequence[0]["FF"], 4);
+  assert.equal(sgf.content[0].sequence[0]["SZ"], 18);
+  assert.equal(sgf.content[0].sequence[0]["PW"], "sai2004");
+  assert.equal(sgf.content[0].sequence[0]["WR"], "7d");
+  assert.equal(sgf.content[0].sequence[0]["PB"], "ponking66");
+  assert.equal(sgf.content[0].sequence[0]["BR"], "4d");
+  assert.equal(sgf.content[0].sequence[0]["DT"], "2007-01-01");
+  assert.equal(sgf.content[0].sequence[0]["PC"],
+    "The KGS Go Server at http://www.gokgs.com/");
+  assert.equal(sgf.content[0].sequence[0]["KM"], 0.5);
+  assert.equal(sgf.content[0].sequence[0]["RE"], "B+1.50");
+  assert.equal(sgf.content[0].sequence[0]["RU"], "Japanese");
+  assert.equal(sgf.content[0].sequence[0]["OT"], "3x30 byo-yomi");
+  assert.equal(sgf.content[0].sequence[0]["CA"], "UTF-8");
+  assert.equal(sgf.content[0].sequence[0]["ST"], 2);
+  assert.deepEqual(sgf.content[0].sequence[0]["AP"], {
+    app: "CGoban",
+    version: "3"
+  });
+  assert.equal(sgf.content[0].sequence[0]["TM"], 2400);
+  assert.equal(sgf.content[0].sequence[0]["HA"], 3);
+  assert.deepEqual(sgf.content[0].sequence[0]["AB"], [
+    [15, 3], [3, 15], [15, 15]
+  ]);
+
   sgf.run();
+  assert.equal(sgf.board.size, 18);
+  assert.equal(sgf.board.komi, 0.5);
+  assert.equal(sgf.board.get(15, 3).color, Board.BLACK);
+  assert.equal(sgf.board.get(3, 15).color, Board.BLACK);
+  assert.equal(sgf.board.get(15, 15).color, Board.BLACK);
+  assert.equal(sgf.board.get(2, 4).color, Board.WHITE);
+  assert.equal(sgf.board.nextPlayingColor, Board.BLACK);
 }

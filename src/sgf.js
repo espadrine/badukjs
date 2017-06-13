@@ -26,23 +26,45 @@
         parser.errors.forEach(options.error);
       }
       this.content = parser.content;
-      if (this.content.length > 0 && this.content[0].sequence.length > 0) {
+      this.reset();
+    },
+
+    // Set the board back to the starting position.
+    reset: function() {
+      if (this.content.length > 0 &&
+          this.content[0] !== undefined &&
+          this.content[0].sequence.length > 0) {
         var size = this.content[0].sequence[0]["SZ"];
         var komi = this.content[0].sequence[0]["KM"];
+        var handicap = this.content[0].sequence[0]["HA"];
+        var setBlack = this.content[0].sequence[0]["AB"];
+        var setWhite = this.content[0].sequence[0]["AW"];
       } else {
         var size = 19;
         var komi = 7.5;
+        var handicap = 0;
       }
       this.board = new Board({size: size, komi: komi});
+      if (handicap !== undefined) {
+        this.board.nextPlayingColor = Board.WHITE;
+      }
+      if (setBlack !== undefined) {
+        this.board.setList(setBlack, Board.BLACK);
+      }
+      if (setWhite !== undefined) {
+        this.board.setList(setWhite, Board.WHITE);
+      }
     },
-    generate: function() {
-      // TODO
-    },
+
     isPassMove: function(move) {
       return (move[0] === undefined) ||
         // Compatibility with FF[3].
         (move[0] >= this.board.size);
     },
+
+    // FIXME: make a .step() method to do a single move.
+    // Make a .countMoves() to count the number of moves.
+
     // Run the SGF file on the board.
     run: function() {
       var sequence = this.content[0].sequence;
@@ -60,6 +82,12 @@
           } else {
             this.board.play(node["W"][0], node["W"][1]);
           }
+        } else if (node["AB"] !== undefined) {
+          this.board.setList(node["AB"], Board.BLACK);
+        } else if (node["AW"] !== undefined) {
+          this.board.setList(node["AW"], Board.WHITE);
+        } else if (node["AE"] !== undefined) {
+          this.board.setList(node["AE"], Board.EMPTY);
         }
       }
     },
@@ -264,11 +292,6 @@
           else { value = propValue; }
         }
         this.skipWhitespace();
-        if (this.peek() === "]") {
-          this.skip();
-        } else {
-          this.error("Expected a `]` ending the property, got `" + this.peek() + "`");
-        }
       } while (this.peek() === "[");
       return { identifier: identifier, value: value };
     },
@@ -279,7 +302,13 @@
     parsePropValue: function(type) {
       if (this.peek() === "[") {
         this.skip();
-        return this.parseCValueType(type);
+        var value = this.parseCValueType(type);
+        if (this.peek() === "]") {
+          this.skip();
+        } else {
+          this.error("Expected a `]` ending the property, got `" + this.peek() + "`");
+        }
+        return value;
       } else {
         this.error("Expected a `[` starting the property value, got `" +
           this.peek() + "`");
@@ -304,37 +333,25 @@
       } else if (type === IDENT_NONE) {
         return null;
       } else if (type === IDENT_ELIST_POINT) {
-        var points = [];
-        while (/[a-zA-Z]/.test(this.peek())) {
-          points.push(this.parsePoint());
-        }
-        return points;
+        return this.parsePoint();
       } else if (type === IDENT_LIST_POINT_POINT) {
-        var arrows = [];
-        while (/[a-zA-Z]/.test(this.peek())) {
-          var from = this.parsePoint();
-          if (this.peek() === ":") {
-            this.skip();
-          } else {
-            this.error("Missing `:` in list of composed point:point");
-          }
-          var to = this.parsePoint();
-          arrows.push([from, to]);
+        var from = this.parsePoint();
+        if (this.peek() === ":") {
+          this.skip();
+        } else {
+          this.error("Missing `:` in list of composed point:point");
         }
-        return arrows;
+        var to = this.parsePoint();
+        return [from, to];
       } else if (type === IDENT_LIST_POINT_SIMPLETEXT) {
-        var labels = [];
-        while (/[a-zA-Z]/.test(this.peek())) {
-          var point = this.parsePoint();
-          if (this.peek() === ":") {
-            this.skip();
-          } else {
-            this.error("Missing `:` in list of composed point:simpletext");
-          }
-          var label = this.parseText({simple: true});
-          labels.push({ point: point, label: label });
+        var point = this.parsePoint();
+        if (this.peek() === ":") {
+          this.skip();
+        } else {
+          this.error("Missing `:` in list of composed point:simpletext");
         }
-        return labels;
+        var label = this.parseText({simple: true});
+        return { point: point, label: label };
       } else if (type === IDENT_SIMPLETEXT_SIMPLETEXT) {
         var app = this.parseText({simple: true, composed: true});
         if (this.peek() === ":") {
