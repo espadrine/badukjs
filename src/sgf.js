@@ -13,6 +13,7 @@
   function SGF() {
     this.content = [];
     this.board = new Board();
+    this.currentNodeIdx = 0;
   }
   SGF.prototype = {
     // source: string of SGF content.
@@ -34,11 +35,15 @@
       if (this.content.length > 0 &&
           this.content[0] !== undefined &&
           this.content[0].sequence.length > 0) {
-        var size = this.content[0].sequence[0]["SZ"];
-        var komi = this.content[0].sequence[0]["KM"];
-        var handicap = this.content[0].sequence[0]["HA"];
-        var setBlack = this.content[0].sequence[0]["AB"];
-        var setWhite = this.content[0].sequence[0]["AW"];
+        var firstNode = this.content[0].sequence[0];
+        var size = firstNode["SZ"];
+        var komi = firstNode["KM"];
+        var handicap = firstNode["HA"];
+        var setBlack = firstNode["AB"];
+        var setWhite = firstNode["AW"];
+        if (firstNode["B"] === undefined && firstNode["W"] === undefined) {
+          this.currentNodeIdx = 1;
+        }
       } else {
         var size = 19;
         var komi = 7.5;
@@ -62,13 +67,14 @@
         (move[0] >= this.board.size);
     },
 
-    // FIXME: make a .step() method to do a single move.
-    // Make a .countMoves() to count the number of moves.
-
-    // Run the SGF file on the board.
-    run: function() {
+    // Perform a single move operation from the SGF file.
+    // Return true if there are still more moves coming.
+    step: function() {
+      var reachedMove = false;
       var sequence = this.content[0].sequence;
-      for (var i = 0; i < sequence.length; i++) {
+      var sequenceLength = sequence.length;
+      for (var i = this.currentNodeIdx;
+          !reachedMove && i < sequenceLength; i++) {
         var node = sequence[i];
         if (node["B"] !== undefined) {
           if (this.isPassMove(node["B"])) {
@@ -76,20 +82,47 @@
           } else {
             this.board.play(node["B"][0], node["B"][1]);
           }
+          reachedMove = true;
         } else if (node["W"] !== undefined) {
           if (this.isPassMove(node["W"])) {
             this.board.pass();
           } else {
             this.board.play(node["W"][0], node["W"][1]);
           }
+          reachedMove = true;
         } else if (node["AB"] !== undefined) {
           this.board.setList(node["AB"], Board.BLACK);
+          reachedMove = true;
         } else if (node["AW"] !== undefined) {
           this.board.setList(node["AW"], Board.WHITE);
+          reachedMove = true;
         } else if (node["AE"] !== undefined) {
           this.board.setList(node["AE"], Board.EMPTY);
+          reachedMove = true;
         }
       }
+      this.currentNodeIdx = i;
+      return this.currentNodeIdx < sequenceLength;
+    },
+
+    // Count the number of stone placements / pass moves.
+    countMoves: function() {
+      var counter = 0;
+      var sequenceLength = sequence.length;
+      for (var i = 0; i < sequenceLength; i++) {
+        var node = sequence[i];
+        if (node["B"] !== undefined || node["W"] !== undefined ||
+            node["AB"] !== undefined || node["AW"] !== undefined ||
+            node["AE"] !== undefined) {
+          counter++;
+        }
+      }
+      return counter;
+    },
+
+    // Run the SGF file on the board.
+    run: function() {
+      while (this.step()) {}
     },
   };
 
