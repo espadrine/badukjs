@@ -120,7 +120,7 @@
     // list: array of [row number, column number].
     setList: function(list, color) {
       for (var i = 0; i < list.length; i++) {
-        this.set(list[i][0], list[i][1], color);
+        this.set(list[i].x, list[i].y, color);
       }
     },
 

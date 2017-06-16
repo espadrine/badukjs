@@ -13,9 +13,9 @@ var Board = Baduk.Board;
   board.play(1, 1);
   board.play(3, 0);
   board.play(3, 1);
-  board.play(10, 0);
+  board.pass();
   board.play(4, 0);
-  board.play(10, 1);
+  board.pass();
   // oo ox
   // xx x
   board.play(2, 0);
@@ -31,13 +31,13 @@ var Board = Baduk.Board;
 
   // This stone makes it so we are actually surrounded by three groups.
   board.play(0, 0);
-  board.play(10, 0);
+  board.pass();
   board.play(0, 1);
-  board.play(10, 1);
+  board.pass();
   board.play(1, 0);
-  board.play(10, 2);
+  board.pass();
   board.play(2, 1);
-  board.play(10, 3);
+  board.pass();
   board.play(1, 2);
   // xx
   // x x
@@ -53,7 +53,7 @@ var Board = Baduk.Board;
   board = new Board();
 
   board.play(1, 0);
-  board.play(10, 0);
+  board.pass();
   board.play(0, 1);
   //  x
   // x

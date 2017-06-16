@@ -38,11 +38,11 @@
         var firstNode = this.content[0].sequence[0];
         var size = firstNode["SZ"];
         var komi = firstNode["KM"];
-        var handicap = firstNode["HA"];
+        var handicap = firstNode["HA"] || 0;
         var setBlack = firstNode["AB"];
         var setWhite = firstNode["AW"];
         if (firstNode["B"] === undefined && firstNode["W"] === undefined) {
-          this.currentNodeIdx = 1;
+          this.step();
         }
       } else {
         var size = 19;
@@ -50,7 +50,7 @@
         var handicap = 0;
       }
       this.board = new Board({size: size, komi: komi});
-      if (handicap !== undefined) {
+      if (handicap > 0) {
         this.board.nextPlayingColor = Board.WHITE;
       }
       if (setBlack !== undefined) {
@@ -61,61 +61,64 @@
       }
     },
 
-    isPassMove: function(move) {
-      return (move[0] === undefined) ||
-        // Compatibility with FF[3].
-        (move[0] >= this.board.size);
+    isPassMove: function(move) { return (move.x < 0); },
+
+    isMove: function(node) {
+      return (node["B"] !== undefined) ||
+             (node["W"] !== undefined);
+    },
+
+    // Return the position {x, y} of the move that is about to be played,
+    // or undefined if there are none.
+    nextMove: function() {
+      var sequence = this.content[0].sequence;
+      var node = sequence[this.currentNodeIdx];
+      if (node !== undefined) {
+        if (node["B"] !== undefined) { return node["B"]; }
+        if (node["W"] !== undefined) { return node["W"]; }
+      }
+    },
+
+    executeMove: function(node) {
+      if (node["B"] !== undefined) {
+        if (this.isPassMove(node["B"])) {
+          this.board.pass();
+        } else {
+          this.board.play(node["B"].x, node["B"].y);
+        }
+      } else if (node["W"] !== undefined) {
+        if (this.isPassMove(node["W"])) {
+          this.board.pass();
+        } else {
+          this.board.play(node["W"].x, node["W"].y);
+        }
+      }
     },
 
     // Perform a single move operation from the SGF file.
+    // Computes all nodes until the next move, putting currentNodeIdx to the
+    // next move.
     // Return true if there are still more moves coming.
     step: function() {
-      var reachedMove = false;
       var sequence = this.content[0].sequence;
       var sequenceLength = sequence.length;
-      for (var i = this.currentNodeIdx;
-          !reachedMove && i < sequenceLength; i++) {
-        var node = sequence[i];
-        if (node["B"] !== undefined) {
-          if (this.isPassMove(node["B"])) {
-            this.board.pass();
-          } else {
-            this.board.play(node["B"][0], node["B"][1]);
-          }
-          reachedMove = true;
-        } else if (node["W"] !== undefined) {
-          if (this.isPassMove(node["W"])) {
-            this.board.pass();
-          } else {
-            this.board.play(node["W"][0], node["W"][1]);
-          }
-          reachedMove = true;
-        } else if (node["AB"] !== undefined) {
-          this.board.setList(node["AB"], Board.BLACK);
-          reachedMove = true;
-        } else if (node["AW"] !== undefined) {
-          this.board.setList(node["AW"], Board.WHITE);
-          reachedMove = true;
-        } else if (node["AE"] !== undefined) {
-          this.board.setList(node["AE"], Board.EMPTY);
-          reachedMove = true;
-        }
-      }
+      var i = this.currentNodeIdx;
+      do {
+        this.executeMove(sequence[i]);
+        i++;
+      } while (i < sequenceLength && !this.isMove(sequence[i]));
       this.currentNodeIdx = i;
-      return this.currentNodeIdx < sequenceLength;
+      return i < sequenceLength;
     },
 
     // Count the number of stone placements / pass moves.
     countMoves: function() {
       var counter = 0;
+      var sequence = this.content[0].sequence;
       var sequenceLength = sequence.length;
       for (var i = 0; i < sequenceLength; i++) {
         var node = sequence[i];
-        if (node["B"] !== undefined || node["W"] !== undefined ||
-            node["AB"] !== undefined || node["AW"] !== undefined ||
-            node["AE"] !== undefined) {
-          counter++;
-        }
+        if (this.isMove(node)) { counter++; }
       }
       return counter;
     },
@@ -137,6 +140,7 @@
     this.tokEnd = 0;
     this.line = 1;
     this.col = 1;
+    this.boardSize = 19;
     this.content = this.parse(sgf);
   }
 
@@ -326,6 +330,12 @@
         }
         this.skipWhitespace();
       } while (this.peek() === "[");
+      if (identifier === "SZ") { this.boardSize = value; }
+      else if ((identifier === "B" || identifier === "W") &&
+               (value.x >= this.boardSize)) {
+        // Compatibility with FF[3].
+        value = { x: -1, y: -1 };
+      }
       return { identifier: identifier, value: value };
     },
     parsePropIdent: function() {
@@ -349,7 +359,7 @@
     },
     parseCValueType: function(type) {
       if (type === IDENT_MOVE) {
-        if (this.peek() === "]") { return []; }
+        if (this.peek() === "]") { return { x: -1, y: -1 }; }
         return this.parsePoint();
       } else if (type === IDENT_NUMBER) {
         return this.parseNumber();
@@ -411,7 +421,7 @@
     parsePoint: function() {
       var x = this.parseCoordinate();
       var y = this.parseCoordinate();
-      return [x, y];
+      return { x: x, y: y };
     },
     parseCoordinate: function() {
       if (/[a-z]/.test(this.peek())) {

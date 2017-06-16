@@ -8,6 +8,7 @@ var Board = Baduk.Board;
   var sgf = new SGF();
   var sgfContent = "(;B[bc];W[];B[ad];W[ac];B[ab];W[sr];B[tt])";
   sgf.parse(sgfContent, { error: function(err) { throw err; }});
+  assert.equal(sgf.board.nextPlayingColor, Board.BLACK);
   sgf.run();
   assert.equal(sgf.board.get(0, 0).color, Board.EMPTY);
   assert.equal(sgf.board.get(1, 2).color, Board.BLACK);
@@ -61,7 +62,7 @@ var Board = Baduk.Board;
   assert.equal(sgf.content[0].sequence[0]["TM"], 2400);
   assert.equal(sgf.content[0].sequence[0]["HA"], 3);
   assert.deepEqual(sgf.content[0].sequence[0]["AB"], [
-    [15, 3], [3, 15], [15, 15]
+    {x: 15, y: 3}, {x: 3, y: 15}, {x: 15, y: 15}
   ]);
 
   sgf.run();
@@ -72,4 +73,27 @@ var Board = Baduk.Board;
   assert.equal(sgf.board.get(15, 15).color, Board.BLACK);
   assert.equal(sgf.board.get(2, 4).color, Board.WHITE);
   assert.equal(sgf.board.nextPlayingColor, Board.BLACK);
+}
+
+// Test next move and count move..
+{
+  var sgf = new SGF();
+  var sgfContent = "(;HA[1]AB[pd];W[bc];C[comment];B[];W[ad];B[ac];W[tt])";
+  sgf.parse(sgfContent, { error: function(err) { throw err; }});
+  assert.equal(5, sgf.countMoves());
+  assert.equal(sgf.board.nextPlayingColor, Board.WHITE);
+  assert.deepEqual({x: 1, y: 2}, sgf.nextMove());
+  assert.equal(true, sgf.step());
+  assert.equal(sgf.board.nextPlayingColor, Board.BLACK);
+  assert.deepEqual({x: -1, y: -1}, sgf.nextMove());
+  assert.equal(true, sgf.step());
+  assert.equal(sgf.board.nextPlayingColor, Board.WHITE);
+  assert.deepEqual({x: 0, y: 3}, sgf.nextMove());
+  assert.equal(true, sgf.step());
+  assert.equal(sgf.board.nextPlayingColor, Board.BLACK);
+  assert.deepEqual({x: 0, y: 2}, sgf.nextMove());
+  assert.equal(true, sgf.step());
+  assert.equal(sgf.board.nextPlayingColor, Board.WHITE);
+  assert.deepEqual({x: -1, y: -1}, sgf.nextMove());
+  assert.equal(false, sgf.step());
 }
