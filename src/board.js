@@ -42,21 +42,24 @@
     this.color = Board.EMPTY;
     this.intersections = new Set();
     this.liberties = new Set();  // Set of intersections.
-    intersections.forEach(this.addIntersection.bind(this));
+    var self = this;
+    intersections.forEach(function(intersection) {
+      self.addIntersection(intersection);
+    });
   }
 
   Group.prototype = {
     addIntersection: function(intersection) {
-      var self = this;
-      self.intersections.add(intersection);
-      self.color = intersection.color;
-      intersection.group = self;
-      self.board.surrounding(intersection.x, intersection.y)
-      .forEach(function(neighbor) {
+      this.intersections.add(intersection);
+      this.color = intersection.color;
+      intersection.group = this;
+      var neighbors = this.board.surrounding(intersection.x, intersection.y);
+      for (var i = 0; i < neighbors.length; i++) {
+        var neighbor = neighbors[i];
         if (neighbor.color === Board.EMPTY) {
-          self.liberties.add(neighbor);
+          this.liberties.add(neighbor);
         }
-      });
+      }
     },
     toString: function() {
       var intersections = this.intersections.map(function(intersection) {
@@ -108,11 +111,12 @@
           var intersection = this.directGet(x, y);
           var surrounding = this.surrounding(x, y);
           var ownSurroundingGroups = [];
-          surrounding.forEach(function(neighbor) {
+          for (var i = 0; i < surrounding.length; i++) {
+            var neighbor = surrounding[i];
             if (neighbor.color === color) {
               ownSurroundingGroups.push(neighbor.group);
             }
-          });
+          }
           this.mergeStoneInGroups(intersection, ownSurroundingGroups);
         }
       }
@@ -127,11 +131,12 @@
     // Create a new group that is the union of the given groups.
     mergeGroups: function(groups) {
       var intersections = [];
-      groups.forEach(function(group) {
+      for (var i = 0; i < groups.length; i++) {
+        var group = groups[i];
         group.intersections.forEach(function(intersection) {
           intersections.push(intersection);
         });
-      });
+      }
       return new Group(this, intersections);
     },
 
@@ -170,28 +175,45 @@
 
       // Get surrounding groups.
       var surrounding = self.surrounding(x, y);
-      var surroundingGroups = surrounding.map(function(neighbor) {
-        if (neighbor.color === Board.EMPTY) { return null; }
-        return neighbor.group;
-      }).filter(function(group) { return group !== null; });
-      var ownSurroundingGroups = surroundingGroups.filter(function(group) {
-        return group.color === color;
-      });
-      var enemySurroundingGroups = surroundingGroups.filter(function(group) {
-        return group.color !== color;
-      });
-      var capturedEnemyGroups = enemySurroundingGroups.filter(function(group) {
-        return group.liberties.size === 1;
-      });
+      var surroundingGroups = [];
+      var ownSurroundingGroups = [];
+      var enemySurroundingGroups = [];
+      var capturedEnemyGroups = [];
+      for (var i = 0; i < surrounding.length; i++) {
+        var neighbor = surrounding[i];
+        if (neighbor.color !== Board.EMPTY) {
+          var group = neighbor.group;
+          surroundingGroups.push(group);
+          if (group.color === color) {
+            ownSurroundingGroups.push(group);
+          } else {
+            enemySurroundingGroups.push(group);
+            if (group.liberties.size === 1) {
+              capturedEnemyGroups.push(group);
+            }
+          }
+        }
+      }
 
       if (capturedEnemyGroups.length === 0) {
         // We are not capturing enemy stones. Are we committing suicide?
-        var emptyNeighbors = surrounding.filter(function(neighbor) {
-          return neighbor.color === Board.EMPTY;
-        });
-        var isKillingOwnGroup = ownSurroundingGroups.every(function(group) {
-          return group.liberties.size === 1;
-        }) && emptyNeighbors.length === 0;
+        var numberOfEmptyNeighbors = 0;
+        for (var i = 0; i < surrounding.length; i++) {
+          var neighbor = surrounding[i];
+          if (neighbor.color === Board.EMPTY) {
+            numberOfEmptyNeighbors++;
+          }
+        }
+        var isLastLibertyOfAllOwnGroups = true;
+        for (var i = 0; i < ownSurroundingGroups.length; i++) {
+          var group = ownSurroundingGroups[i];
+          if (group.liberties.size !== 1) {
+            isLastLibertyOfAllOwnGroups = false;
+            break;
+          }
+        }
+        var isKillingOwnGroup = isLastLibertyOfAllOwnGroups &&
+                                (numberOfEmptyNeighbors === 0);
         if (isKillingOwnGroup) {
           // Undo the insertion of a stone.
           self.directSet(x, y, Board.EMPTY);
@@ -201,25 +223,28 @@
 
       self.mergeStoneInGroups(intersection, ownSurroundingGroups);
 
-      enemySurroundingGroups.forEach(function(group) {
+      for (var i = 0; i < enemySurroundingGroups.length; i++) {
+        var group = enemySurroundingGroups[i];
         group.liberties.delete(intersection);
-      });
+      }
 
-      capturedEnemyGroups.forEach(function(group) {
+      for (var i = 0; i < capturedEnemyGroups.length; i++) {
+        var group = capturedEnemyGroups[i];
         self.groups.delete(group);
         group.intersections.forEach(function(intersection) {
           intersection.group = null;
           intersection.color = Board.EMPTY;
-          // This intersection's stone was captured. Add the liberties to its
-          // neighbors.
-          self.surrounding(intersection.x, intersection.y)
-          .forEach(function(neighbor) {
+          // This intersection's stone was captured.
+          // Add the liberties to its neighbors.
+          var surrounding = self.surrounding(intersection.x, intersection.y);
+          for (var j = 0; j < surrounding.length; j++) {
+            var neighbor = surrounding[j];
             if (neighbor.color !== Board.EMPTY) {
               neighbor.group.liberties.add(intersection);
             }
-          });
+          }
         });
-      });
+      }
 
       self.nextTurn();
       return true;
