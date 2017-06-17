@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 var Baduk = require('../src/sgf.js');
+
+var everyStep = false;
+process.argv.forEach(function(arg) {
+  if (arg === "--steps") { everyStep = true; }
+});
+
 process.stdin.setEncoding('utf8');
 var sgfContent = '';
 process.stdin.on('readable', function() {
@@ -8,6 +14,13 @@ process.stdin.on('readable', function() {
 process.stdin.on('end', function() {
   var sgf = new Baduk.SGF();
   sgf.parse(sgfContent, {error: function(err) { console.error(err); }});
-  sgf.run();
+  if (everyStep) {
+    console.log(sgf.board.toString());
+    while (sgf.step()) {
+      console.log(sgf.board.toString());
+    }
+  } else {
+    sgf.run();
+  }
   console.log(sgf.board.toString());
 });

@@ -17,4 +17,16 @@ sgf.parse(stringOfSGFContent, {error: function(err) { console.error(err); }});
 // from the top).
 // `gameTrees` is a list of {sequence, gameTrees}.
 sgf.content
+
+sgf.step();  // Performs the first move on sgf.board.
+sgf.run();   // Perform all the game from the SGF on sgf.board.
+sgf.countMoves();  // Number of moves in the game.
+sgf.reset(); // Reset sgf.board to the starting position.
 ```
+
+# Binaries
+
+- `./bin/print-sgf.js`: reads an SGF file from stdin, outputs a UTF-8
+  representation of the result. If passed with `--steps`, outputs a
+  representation of the board for every move.
+- `./bin/sgf2json.js`: converts SGF to a JSON representation.
