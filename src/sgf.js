@@ -32,6 +32,7 @@
 
     // Set the board back to the starting position.
     reset: function() {
+      this.currentNodeIdx = 0;
       if (this.content.length > 0 &&
           this.content[0] !== undefined &&
           this.content[0].sequence.length > 0) {
@@ -124,8 +125,51 @@
     },
 
     // Run the SGF file on the board.
-    run: function() {
-      while (this.step()) {}
+    run: function() { while (this.step()) {} },
+
+    // coord is a {x, y} intersection coordinate.
+    // quarters is the number of quarter turns to rotate the board.
+    // Returns a new {x, y} coordinate.
+    // This code assumes a square board.
+    rotateCoord: function(coord, quarters) {
+      if (coord.x < 0) { return coord; }  // Pass moves are ignored.
+      // 2, 1 → size - 1, 2 → size - 2, size - 1 → 1, size - 2
+      var x = coord.x, y = coord.y, size = this.board.size;
+      for (var i = 0; i < quarters; i++) {
+        var oldX = x;
+        x = size - y - 1;
+        y = oldX;
+      }
+      return { x: x, y: y };
+    },
+
+    // Rotate the board in the SGF content.
+    // quarters is the number of quarter turns to rotate the board.
+    // This code assumes a square board.
+    // It causes the board to reset.
+    rotate: function(quarters) {
+      if (quarters === 0) { return; }
+      var contentLength = this.content.length;
+      for (var i = 0; i < contentLength; i++) {
+        var sequence = this.content[i].sequence;
+        var sequenceLength = sequence.length;
+        for (var j = 0; j < sequenceLength; j++) {
+          var node = sequence[j];
+          for (var key in node) {
+            var nodeValue = node[key];
+            if (nodeValue.x !== undefined) {  // Node is a point.
+              node[key] = this.rotateCoord(nodeValue, quarters);
+            } else if (nodeValue instanceof Array && (nodeValue.length > 0) &&
+                (nodeValue[0].x !== undefined)) {  // List of points.
+              var nodeValueLength = nodeValue.length;
+              for (var k = 0; k < nodeValueLength; k++) {
+                nodeValue[k] = this.rotateCoord(nodeValue[k], quarters);
+              }
+            }
+          }
+        }
+      }
+      this.reset();
     },
   };
 

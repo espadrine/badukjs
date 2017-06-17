@@ -97,3 +97,25 @@ var Board = Baduk.Board;
   assert.deepEqual({x: -1, y: -1}, sgf.nextMove());
   assert.equal(false, sgf.step());
 }
+
+// Test board rotation.
+{
+  var sgf = new SGF();
+  var sgfContent = "(;HA[1]AB[cb];W[db];B[sq];W[jl];B[bq];W[tt])";
+  sgf.parse(sgfContent, { error: function(err) { throw err; }});
+  sgf.rotate(1);
+  sgf.run();
+  assert.equal(sgf.board.get(17, 2).color, Board.BLACK);
+  assert.equal(sgf.board.get(17, 3).color, Board.WHITE);
+  assert.equal(sgf.board.get(2, 18).color, Board.BLACK);
+  assert.equal(sgf.board.get(7,  9).color, Board.WHITE);
+  assert.equal(sgf.board.get(2,  1).color, Board.BLACK);
+
+  sgf.rotate(3);
+  sgf.run();
+  assert.equal(sgf.board.get( 2,  1).color, Board.BLACK);
+  assert.equal(sgf.board.get( 3,  1).color, Board.WHITE);
+  assert.equal(sgf.board.get(18, 16).color, Board.BLACK);
+  assert.equal(sgf.board.get( 9, 11).color, Board.WHITE);
+  assert.equal(sgf.board.get( 1, 16).color, Board.BLACK);
+}
