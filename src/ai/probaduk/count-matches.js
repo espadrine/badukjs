@@ -6,13 +6,25 @@ var mask = require('./mask.js');
 var sgf = new SGF();
 var mask4 = new mask.Diamond4();
 
-function computeSgf(sgfContent) {
-  sgf.parse(String(sgfContent));
+function aggregateFromGame(sgf) {
   while (sgf.step()) {
     var move = sgf.nextMove();
     mask4.readFromBoard(sgf.board, move);
   }
-  // FIXME: add rotations and inversions.
+}
+
+function computeSgf(sgfContent) {
+  sgf.parse(String(sgfContent));
+  // Perform this for each game symmetry and reflection.
+  for (var i = 0; i < 4; i++) {
+    sgf.rotate(i);
+    aggregateFromGame(sgf);
+  }
+  sgf.flipHorizontally();
+  aggregateFromGame(sgf);
+  sgf.flipHorizontally();
+  sgf.flipVertically();
+  aggregateFromGame(sgf);
 
   var maxScore = 0;
   var maxBitsMatch;
@@ -34,7 +46,7 @@ function score(matchStats) {
   var n = matchStats.matches;
   if (n === 0) { return 0; }
   var z = 1.96, phat = moves / n;
-  return (phat + z*z/(2*n) - z * Math.sqrt((phat*(1-phat)+z*z/(4*n))/n))/(1+z*z/n)
+  return (phat + z*z/(2*n) - z * Math.sqrt((phat*(1-phat)+z*z/(4*n))/n))/(1+z*z/n);
 }
 
 

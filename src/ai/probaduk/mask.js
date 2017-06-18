@@ -7,8 +7,7 @@ function Stats() {
 }
 Stats.prototype = {
   toString: function() {
-    return 'Move matches: ' + this.moveMatches + '\n' +
-      'Matches: ' + this.matches;
+    return this.moveMatches + ' moves out of ' + this.matches + ' matches';
   },
 }
 
