@@ -118,4 +118,21 @@ var Board = Baduk.Board;
   assert.equal(sgf.board.get(18, 16).color, Board.BLACK);
   assert.equal(sgf.board.get( 9, 11).color, Board.WHITE);
   assert.equal(sgf.board.get( 1, 16).color, Board.BLACK);
+
+  sgf.flipHorizontally();
+  sgf.run();
+  assert.equal(sgf.board.get( 2, 17).color, Board.BLACK);
+  assert.equal(sgf.board.get( 3, 17).color, Board.WHITE);
+  assert.equal(sgf.board.get(18,  2).color, Board.BLACK);
+  assert.equal(sgf.board.get( 9,  7).color, Board.WHITE);
+  assert.equal(sgf.board.get( 1,  2).color, Board.BLACK);
+
+  sgf.flipHorizontally();
+  sgf.flipVertically();
+  sgf.run();
+  assert.equal(sgf.board.get(16,  1).color, Board.BLACK);
+  assert.equal(sgf.board.get(15,  1).color, Board.WHITE);
+  assert.equal(sgf.board.get( 0, 16).color, Board.BLACK);
+  assert.equal(sgf.board.get( 9, 11).color, Board.WHITE);
+  assert.equal(sgf.board.get(17, 16).color, Board.BLACK);
 }

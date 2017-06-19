@@ -104,6 +104,7 @@
       var sequence = this.content[0].sequence;
       var sequenceLength = sequence.length;
       var i = this.currentNodeIdx;
+      if (i >= sequenceLength) { return false; }
       do {
         this.executeMove(sequence[i]);
         i++;
@@ -143,12 +144,9 @@
       return { x: x, y: y };
     },
 
-    // Rotate the board in the SGF content.
-    // quarters is the number of quarter turns to rotate the board.
-    // This code assumes a square board.
-    // It causes the board to reset.
-    rotate: function(quarters) {
-      if (quarters === 0) { return; }
+    // Map the board to a different board (eg. rotate it).
+    // transformation(intersection) maps an intersection into another.
+    transform: function(transformation) {
       var contentLength = this.content.length;
       for (var i = 0; i < contentLength; i++) {
         var sequence = this.content[i].sequence;
@@ -157,19 +155,55 @@
           var node = sequence[j];
           for (var key in node) {
             var nodeValue = node[key];
-            if (nodeValue.x !== undefined) {  // Node is a point.
-              node[key] = this.rotateCoord(nodeValue, quarters);
-            } else if (nodeValue instanceof Array && (nodeValue.length > 0) &&
-                (nodeValue[0].x !== undefined)) {  // List of points.
+            if (nodeValue.x !== undefined) {  // nodeValue is a point.
+              node[key] = transformation(nodeValue);
+            } else if (nodeValue instanceof Array &&
+                       (nodeValue.length > 0) &&
+                       (nodeValue[0].x !== undefined)) {
+              // nodeValue is a list of points.
               var nodeValueLength = nodeValue.length;
               for (var k = 0; k < nodeValueLength; k++) {
-                nodeValue[k] = this.rotateCoord(nodeValue[k], quarters);
+                nodeValue[k] = transformation(nodeValue[k]);
               }
             }
           }
         }
       }
       this.reset();
+    },
+
+    // Rotate the board in the SGF content.
+    // quarters is the number of quarter turns to rotate the board.
+    // This code assumes a square board.
+    // It causes the board to reset.
+    rotate: function(quarters) {
+      if (quarters === 0) { return; }
+      var self = this;
+      self.transform(function(coord) {
+        return self.rotateCoord(coord, quarters);
+      });
+    },
+
+    flipCoordHorizontally: function(coord) {
+      return { x: coord.x, y: this.board.size - coord.y - 1 };
+    },
+
+    flipCoordVertically: function(coord) {
+      return { x: this.board.size - coord.x - 1, y: coord.y };
+    },
+
+    flipHorizontally: function() {
+      var self = this;
+      self.transform(function(coord) {
+        return self.flipCoordHorizontally(coord);
+      });
+    },
+
+    flipVertically: function() {
+      var self = this;
+      self.transform(function(coord) {
+        return self.flipCoordVertically(coord);
+      });
     },
   };
 
