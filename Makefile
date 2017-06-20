@@ -26,5 +26,13 @@ sgf/kgs4d/:
 		done)
 	rm -r sgf/kgs4d-tar
 
+sgf/alphago/:
+	mkdir -p sgf/alphago; \
+	cd sgf/alphago; \
+	cat ../lists/alphago | \
+		(while read sgf; do \
+			echo "$$sgf"; \
+			curl -O "$$sgf"; \
+		done)
 
 .PHONY: clean test
