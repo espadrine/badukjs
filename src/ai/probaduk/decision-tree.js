@@ -11,7 +11,7 @@ function DecisionTree(root) {
 }
 
 DecisionTree.prototype = {
-  computeDecision: function(board, intersection, color) {
+  computeDecision: function(board, intersection, color, prevMove) {
     var targetNodeX = intersection.x + this.relPointX;
     var targetNodeY = intersection.y + this.relPointY;
     var targetNode = board.get(targetNodeX, targetNodeY);
@@ -32,6 +32,14 @@ DecisionTree.prototype = {
         else if (libertyCount === 2) { return VAL_TWO; }
         else { return VAL_THREE; }
       }
+    } else if (parameter === PARAM_DIST_MOVE) {
+      if (prevMove === undefined) { return VAL_ZERO_ONE; }
+      var distance = Math.abs(prevMove.x - intersection.x) +
+                     Math.abs(prevMove.y - intersection.y);
+      if (distance === 1) { return VAL_ZERO_ONE; }
+      else if (distance === 2 || distance === 3) { return VAL_TWO_THREE; }
+      else if (distance === 4 || distance === 5) { return VAL_FOUR_FIVE; }
+      else if (distance > 6) { return VAL_SIX; }
     } else if (parameter === PARAM_GROUP_COUNT) {
       if (targetNode === undefined || targetNode.group === null) {
         return VAL_ZERO;
@@ -43,23 +51,23 @@ DecisionTree.prototype = {
       }
     } else { console.error('invalid parameter', parameter); }
   },
-  score: function(board, intersection, color) {
-    var decision = this.computeDecision(board, intersection, color);
+  score: function(board, intersection, color, prevMove) {
+    var decision = this.computeDecision(board, intersection, color, prevMove);
     if (this.treeIf[decision] === undefined) {
       return this.moveScoresIf[decision];
     } else {
-      return this.treeIf[decision].score(board, intersection, color);
+      return this.treeIf[decision].score(board, intersection, color, prevMove);
     }
   },
-  findMatchingLeaf: function(board, intersection, color) {
-    var decision = this.computeDecision(board, intersection, color);
+  findMatchingLeaf: function(board, intersection, color, prevMove) {
+    var decision = this.computeDecision(board, intersection, color, prevMove);
     if (this.treeIf[decision] === undefined) {
       return this;
     } else {
-      return this.treeIf[decision].findMatchingLeaf(board, intersection, color);
+      return this.treeIf[decision].findMatchingLeaf(board, intersection, color, prevMove);
     }
   },
-  guess: function(board) {
+  guess: function(board, prevMove) {
     var color = board.nextPlayingColor;
     var maxScore = 0;
     var maxMoveX = 0;
@@ -68,7 +76,8 @@ DecisionTree.prototype = {
     for (var y = 0; y < boardSize; y++) {
       for (var x = 0; x < boardSize; x++) {
         var intersection = board.directGet(x, y);
-        intersection.score = this.score(board, intersection, color);
+        if (intersection.color !== Board.EMPTY) { continue; }
+        intersection.score = this.score(board, intersection, color, prevMove);
         if (maxScore < intersection.score) {
           maxScore = intersection.score;
           maxMoveX = x;
@@ -89,7 +98,7 @@ DecisionTree.prototype = {
   },
 };
 
-// trainingSet: function(function(board, move))
+// trainingSet: function(function(board, move, prevMove))
 DecisionTree.learn = function(treeSize, trainingSet) {
   var root = new DecisionTree();
   root.root = root;
@@ -188,14 +197,15 @@ function expandLeaf(root, parent, ifValue, leafIdx, leaves) {
 
 function computeStats(trainingSet, root, newLeaf) {
   var stats = setupStats(newLeaf);
-  trainingSet(function(board, move) {
+  trainingSet(function(board, move, prevMove) {
     if (move.x < 0) { return; }
     var color = board.nextPlayingColor;
     for (var y = 0; y < board.size; y++) {
       for (var x = 0; x < board.size; x++) {
         var intersection = board.directGet(x, y);
+        if (intersection.color !== Board.EMPTY) { continue; }
         var isMove = sameIntersection(move, intersection);
-        computeStatsForPoint(board, intersection, color, isMove,
+        computeStatsForPoint(board, intersection, color, prevMove, isMove,
           stats, root, newLeaf);
       }
     }
@@ -227,16 +237,14 @@ function setupStats(newLeaf) {
 }
 
 function computeStatsForPoint(
-board, intersection, color, isMove, stats, root, newLeaf) {
-  //console.log('root', JSON.stringify(root));
-  var matchingLeaf = root.findMatchingLeaf(board, intersection, color);
-  //console.log('matching leaf', matchingLeaf, 'new leaf', newLeaf);
+board, intersection, color, prevMove, isMove, stats, root, newLeaf) {
+  var matchingLeaf = root.findMatchingLeaf(board, intersection, color, prevMove);
   var relPoints = matchingLeaf.relPoints;
   if (matchingLeaf === newLeaf) {
     // This is the leaf we want to study.
     forEachParameterAndValue(relPoints, function(point, param, value) {
       var parameterMatch = intersectionMatchesParameter(point, param, value,
-        board, intersection, color);
+        board, intersection, color, prevMove);
       if (parameterMatch) {
         if (isMove) {
           stats[point.x][point.y][param][value].moveMatches++;
@@ -263,12 +271,12 @@ function forEachParameterAndValue(relPoints, use) {
 }
 
 function intersectionMatchesParameter(targetIntersection, param, value,
-                                      board, intersection, color) {
+                                      board, intersection, color, prevMove) {
   var decision = new DecisionTree();
   decision.parameter = param;
   decision.relPointX = targetIntersection.x;
   decision.relPointY = targetIntersection.y;
-  return decision.computeDecision(board, intersection, color) === value;
+  return decision.computeDecision(board, intersection, color, prevMove) === value;
 }
 
 function setParamToLeaf(newLeaf, stats) {
@@ -361,7 +369,8 @@ function sameIntersection(a, b) {
 // Node parameters for decision tree conditions.
 var PARAM_TYPE          = 0;
 var PARAM_LIBERTY_COUNT = 1;
-var PARAM_GROUP_COUNT   = 2;
+var PARAM_DIST_MOVE     = 2;
+var PARAM_GROUP_COUNT   = 3;
 
 // Parameter values.
 // First, for PARAM_TYPE.
@@ -374,13 +383,19 @@ var VAL_ZERO   = 0;
 var VAL_ONE    = 1;
 var VAL_TWO    = 2;
 var VAL_THREE  = 3;  // or more.
+var VAL_ZERO_ONE  = 0;
+var VAL_TWO_THREE = 1;
+var VAL_FOUR_FIVE = 2;
+var VAL_SIX       = 3;  // or more.
 
-var parameters = [PARAM_TYPE, PARAM_LIBERTY_COUNT, PARAM_GROUP_COUNT];
+var parameters = [PARAM_TYPE, PARAM_LIBERTY_COUNT, PARAM_DIST_MOVE, /*PARAM_GROUP_COUNT*/];
 var valuesForParameter = [];
 valuesForParameter[PARAM_TYPE] = [VAL_OUT, VAL_EMPTY, VAL_FRIEND, VAL_ENEMY];
 valuesForParameter[PARAM_LIBERTY_COUNT] =
   [VAL_ZERO, VAL_ONE, VAL_TWO, VAL_THREE];
-valuesForParameter[PARAM_GROUP_COUNT] =
-  [VAL_ZERO, VAL_ONE, VAL_TWO, VAL_THREE];
+valuesForParameter[PARAM_DIST_MOVE] =
+  [VAL_ZERO_ONE, VAL_TWO_THREE, VAL_FOUR_FIVE, VAL_SIX];
+//valuesForParameter[PARAM_GROUP_COUNT] =
+//  [VAL_ZERO, VAL_ONE, VAL_TWO, VAL_THREE];
 
 module.exports = DecisionTree;

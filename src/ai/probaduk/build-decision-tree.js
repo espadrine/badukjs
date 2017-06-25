@@ -13,8 +13,9 @@ function parseGame(game) {
 
 function aggregateFromGame(sgf, analyseMove) {
   while (sgf.step()) {
+    var prevMove = move;
     var move = sgf.nextMove();
-    analyseMove(sgf.board, move);
+    analyseMove(sgf.board, move, prevMove);
   }
 }
 
@@ -36,7 +37,7 @@ function computeSgf(sgf, analyseMove) {
 
 var gamesDir = path.join(__dirname, "..", "..", "..", "sgf", "alphago");
 var games = fs.readdirSync(gamesDir);
-var trainingSize = 20;
+var trainingSize = 4;
 var validationSize = 20;
 var trainingGames = games.slice(0, trainingSize);
 var validationGames = games.slice(trainingSize, trainingSize + validationSize);
@@ -50,16 +51,15 @@ var tree = DecisionTree.learn(300, function train(analyseMove) {
   trainingSgf.forEach(function(sgf) { computeSgf(sgf, analyseMove); });
 });
 console.timeEnd('training');
-fs.writeFileSync(path.join(__dirname, 'dtree.json'),
-  JSON.stringify(tree, null, 2));
+console.log(JSON.stringify(tree));
 
 console.time('validation');
 var guesses = 0;
 var correctGuesses = 0;
 validationSgf.forEach(function(sgf) {
-  computeSgf(sgf, function(board, move) {
+  computeSgf(sgf, function(board, move, prevMove) {
     if (move.x < 0) { return; }
-    var guessedMove = tree.guess(board);
+    var guessedMove = tree.guess(board, prevMove);
     if (guessedMove.x === move.x && guessedMove.y === move.y) {
       correctGuesses++;
     }
@@ -67,5 +67,5 @@ validationSgf.forEach(function(sgf) {
   });
 });
 console.timeEnd('validation');
-console.log('Guessed ' + correctGuesses + '/' + guesses +
+console.error('Guessed ' + correctGuesses + '/' + guesses +
   ' (' + (correctGuesses / guesses).toPrecision(3) + ')');
