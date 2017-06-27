@@ -4,6 +4,20 @@ var Baduk = require('../../sgf.js');
 var SGF = Baduk.SGF;
 var DecisionTree = require('./decision-tree.js');
 
+// Command-line parameters.
+process.argv.shift();  // node
+if (/build-decision-tree/.test(process.argv[0])) { process.argv.shift(); }
+if (process.argv[0] === '-h' || process.argv[0] === '--help') {
+  console.log("node build-decision-tree.js [games dir] [training size] " +
+    "[validation size] [tree size] > tree.json");
+  process.exit(0);
+}
+var gamesDir = process.argv[0] || path.join(__dirname, "..", "..", "..", "sgf", "alphago");
+var trainingSize = +process.argv[1] || 4;
+var validationSize = +process.argv[2] || 20;
+var treeSize = +process.argv[3] || 300;
+console.error(gamesDir, trainingSize, validationSize, treeSize);
+
 function parseGame(game) {
   var sgfContent = String(fs.readFileSync(path.join(gamesDir, game)));
   var sgf = new SGF();
@@ -35,25 +49,24 @@ function computeSgf(sgf, analyseMove) {
   sgf.rotate(1);
 }
 
-var gamesDir = path.join(__dirname, "..", "..", "..", "sgf", "alphago");
 var games = fs.readdirSync(gamesDir);
-var trainingSize = 4;
-var validationSize = 20;
 var trainingGames = games.slice(0, trainingSize);
 var validationGames = games.slice(trainingSize, trainingSize + validationSize);
-console.time('parsing');
+var t0 = +Date.now();
 var trainingSgf = trainingGames.map(parseGame);
 var validationSgf = validationGames.map(parseGame);
-console.timeEnd('parsing');
+var t1 = +Date.now();
+console.error('parsing: ' + (t1 - t0).toPrecision(3) + 'ms');
 
-console.time('training');
-var tree = DecisionTree.learn(300, function train(analyseMove) {
+t0 = +Date.now();
+var tree = DecisionTree.learn(treeSize, function train(analyseMove) {
   trainingSgf.forEach(function(sgf) { computeSgf(sgf, analyseMove); });
 });
-console.timeEnd('training');
+t1 = +Date.now();
+console.error('training: ' + (t1 - t0).toPrecision(3) + 'ms');
 console.log(JSON.stringify(tree));
 
-console.time('validation');
+t0 = +Date.now();
 var guesses = 0;
 var correctGuesses = 0;
 validationSgf.forEach(function(sgf) {
@@ -66,6 +79,7 @@ validationSgf.forEach(function(sgf) {
     guesses++;
   });
 });
-console.timeEnd('validation');
+t1 = +Date.now();
+console.error('validation: ' + (t1 - t0).toPrecision(3) + 'ms');
 console.error('Guessed ' + correctGuesses + '/' + guesses +
   ' (' + (correctGuesses / guesses).toPrecision(3) + ')');

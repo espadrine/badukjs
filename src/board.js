@@ -89,6 +89,7 @@
     }
     this.groups = new Set();
     this.nextPlayingColor = Board.BLACK;
+    this.numMoves = 0;
   }
 
   Board.prototype = {
@@ -246,6 +247,7 @@
         });
       }
 
+      self.numMoves++;
       self.nextTurn();
       return true;
     },

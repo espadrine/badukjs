@@ -40,15 +40,20 @@ DecisionTree.prototype = {
       else if (distance === 2 || distance === 3) { return VAL_TWO_THREE; }
       else if (distance === 4 || distance === 5) { return VAL_FOUR_FIVE; }
       else if (distance > 6) { return VAL_SIX; }
-    } else if (parameter === PARAM_GROUP_COUNT) {
-      if (targetNode === undefined || targetNode.group === null) {
-        return VAL_ZERO;
-      } else {
-        var groupCount = targetNode.group.intersections.size;
-        if (groupCount === 1) { return VAL_ONE; }
-        else if (groupCount === 2) { return VAL_TWO; }
-        else { return VAL_THREE; }
-      }
+    } else if (parameter === PARAM_DIST_EDGE) {
+      if (prevMove === undefined) { return VAL_ZERO_ONE; }
+      var distance = Math.min(intersection.x, intersection.y,
+        board.size - intersection.x - 1, board.size - intersection.y - 1);
+      if (distance === 1) { return VAL_ZERO_ONE; }
+      else if (distance === 2 || distance === 3) { return VAL_TWO_THREE; }
+      else if (distance === 4 || distance === 5) { return VAL_FOUR_FIVE; }
+      else if (distance > 6) { return VAL_SIX; }
+    } else if (parameter === PARAM_MOVE_COUNT) {
+      var count = board.numMoves;
+      if (count < 50) { return VAL_ZERO_FIFTY; }
+      else if (count < 100) { return VAL_FIFTY_HUNDRED; }
+      else if (count < 150) { return VAL_HUNDRED; }
+      else if (count >= 150) { return VAL_HUNDRED_FIFTY; }
     } else { console.error('invalid parameter', parameter); }
   },
   score: function(board, intersection, color, prevMove) {
@@ -85,7 +90,7 @@ DecisionTree.prototype = {
         }
       }
     }
-    return {x: maxMoveX, y: maxMoveY};
+    return {x: maxMoveX, y: maxMoveY, score: maxScore};
   },
   toJSON: function() {
     return {
@@ -96,6 +101,21 @@ DecisionTree.prototype = {
       treeIf: this.treeIf,
     };
   },
+};
+
+// Data is a parsed version of what toJSON() would give.
+DecisionTree.load = function(data, root) {
+  var tree = new DecisionTree();
+  root = root || tree;
+  tree.relPointX = data.relPointX;
+  tree.relPointY = data.relPointY;
+  tree.parameter = data.parameter;
+  tree.moveScoresIf = data.moveScoresIf;
+  tree.treeIf = data.treeIf.map(function(subtree) {
+    if (subtree === null) { return; }
+    return DecisionTree.load(subtree, root);
+  });
+  return tree;
 };
 
 // trainingSet: function(function(board, move, prevMove))
@@ -370,7 +390,8 @@ function sameIntersection(a, b) {
 var PARAM_TYPE          = 0;
 var PARAM_LIBERTY_COUNT = 1;
 var PARAM_DIST_MOVE     = 2;
-var PARAM_GROUP_COUNT   = 3;
+var PARAM_DIST_EDGE     = 3;
+var PARAM_MOVE_COUNT    = 4;
 
 // Parameter values.
 // First, for PARAM_TYPE.
@@ -387,15 +408,21 @@ var VAL_ZERO_ONE  = 0;
 var VAL_TWO_THREE = 1;
 var VAL_FOUR_FIVE = 2;
 var VAL_SIX       = 3;  // or more.
+var VAL_ZERO_FIFTY    = 0;  // 0-49
+var VAL_FIFTY_HUNDRED = 1;  // 50-99
+var VAL_HUNDRED       = 2;  // 100-149
+var VAL_HUNDRED_FIFTY = 3;  // 150
 
-var parameters = [PARAM_TYPE, PARAM_LIBERTY_COUNT, PARAM_DIST_MOVE, /*PARAM_GROUP_COUNT*/];
+var parameters = [PARAM_TYPE, PARAM_LIBERTY_COUNT, PARAM_DIST_MOVE, PARAM_DIST_EDGE, PARAM_MOVE_COUNT];
 var valuesForParameter = [];
 valuesForParameter[PARAM_TYPE] = [VAL_OUT, VAL_EMPTY, VAL_FRIEND, VAL_ENEMY];
 valuesForParameter[PARAM_LIBERTY_COUNT] =
   [VAL_ZERO, VAL_ONE, VAL_TWO, VAL_THREE];
 valuesForParameter[PARAM_DIST_MOVE] =
   [VAL_ZERO_ONE, VAL_TWO_THREE, VAL_FOUR_FIVE, VAL_SIX];
-//valuesForParameter[PARAM_GROUP_COUNT] =
-//  [VAL_ZERO, VAL_ONE, VAL_TWO, VAL_THREE];
+valuesForParameter[PARAM_DIST_EDGE] =
+  [VAL_ZERO_ONE, VAL_TWO_THREE, VAL_FOUR_FIVE, VAL_SIX];
+valuesForParameter[PARAM_MOVE_COUNT] =
+  [VAL_ZERO_FIFTY, VAL_FIFTY_HUNDRED, VAL_HUNDRED, VAL_HUNDRED_FIFTY];
 
 module.exports = DecisionTree;
