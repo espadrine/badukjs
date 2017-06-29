@@ -1,60 +1,80 @@
 var fs = require('fs');
+var path = require('path');
 var Baduk = require('../../sgf.js');
 var SGF = Baduk.SGF;
 var mask = require('./mask.js');
 
 var sgf = new SGF();
-var mask4 = new mask.Diamond4();
+var mask3 = new mask.Mask3();
 
 function aggregateFromGame(sgf) {
   while (sgf.step()) {
     var move = sgf.nextMove();
-    mask4.readFromBoard(sgf.board, move);
+    mask3.readFromBoard(sgf.board, move);
   }
 }
 
-function computeSgf(sgfContent) {
-  sgf.parse(String(sgfContent));
+function computeSgf(sgfContent, filename) {
+  sgf.parse(String(sgfContent), {filename: filename, error: console.error});
+  aggregateFromGame(sgf);
   // Perform this for each game symmetry and reflection.
-  for (var i = 0; i < 4; i++) {
-    sgf.rotate(i);
+  for (var i = 0; i < 3; i++) {
+    sgf.rotate(1);
     aggregateFromGame(sgf);
   }
+  sgf.rotate(1);
   sgf.flipHorizontally();
   aggregateFromGame(sgf);
   sgf.flipHorizontally();
   sgf.flipVertically();
   aggregateFromGame(sgf);
+}
 
-  var maxScore = 0;
-  var maxBitsMatch;
-  mask4.map.forEach(function(matchStats, bitsMatch) {
-    var prob = score(matchStats);
-    if (prob > maxScore) {
-      maxScore = prob;
-      maxBitsMatch = bitsMatch;
+// Compute the number of correct guesses and overall guesses [correct, total].
+function guessGame(sgfContent, filename) {
+  sgf.parse(String(sgfContent), {filename: filename, error: console.error});
+  var correct = 0;
+  var total = 0;
+  while (sgf.step()) {
+    var move = sgf.nextMove();
+    if (move.x < 0) { continue; }
+    var guess = mask3.guess(sgf.board);//guessMove(sgf.board);
+    if (guess.move.x === move.x && guess.move.y === move.y) {
+      correct++;
     }
-  });
-  mask4.logMatch(maxBitsMatch);
+    total++;
+  }
+  return [correct, total];
 }
 
-// Compute the probability that this move is recommended.
-// We use the lower bound of the Wilson score for a binomial proportion
-// confidence interval at 95% confidence.
-function score(matchStats) {
-  var moves = matchStats.moveMatches;
-  var n = matchStats.matches;
-  if (n === 0) { return 0; }
-  var z = 1.96, phat = moves / n;
-  return (phat + z*z/(2*n) - z * Math.sqrt((phat*(1-phat)+z*z/(4*n))/n))/(1+z*z/n);
-}
+var sgfDir = path.join(__dirname, '../../../sgf/alphago');
+var files = fs.readdirSync(sgfDir);
+var trainingSize = 40;
+var validationSize = 10;
+var trainingSet = files.slice(0, trainingSize);
+var validationSet = files.slice(trainingSize, trainingSize + validationSize);
+console.log('training');
 
+console.time('training');
+trainingSet.forEach(function(filename) {
+  var sgfContent = fs.readFileSync(path.join(sgfDir, filename));
+  computeSgf(sgfContent, filename);
+});
+console.timeEnd('training');
 
-process.stdin.setEncoding('utf8');
-var sgfContent = '';
-process.stdin.on('readable', function() {
-  sgfContent += String(process.stdin.read());
+var correct = 0;
+var total = 0;
+var vt0 = +Date.now();
+validationSet.forEach(function(filename) {
+  var sgfContent = fs.readFileSync(path.join(sgfDir, filename));
+  var accuracy = guessGame(sgfContent, filename);
+  correct += accuracy[0];
+  total += accuracy[1];
 });
-process.stdin.on('end', function() {
-  computeSgf(sgfContent);
-});
+var vt1 = +Date.now();
+var accuracy = correct / total;
+var timePerGuess = ((vt1 - vt0) / total / 1000);  // in s.
+console.log('Accuracy: ' + correct + '/' + total +
+  ' (' + (accuracy * 100).toPrecision(3) + '%), ' +
+  'time: ' + timePerGuess.toPrecision(3) + 's, ' +
+  'ratio: ' + Math.round(accuracy / timePerGuess));
