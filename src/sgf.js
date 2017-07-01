@@ -301,19 +301,19 @@
     parseNode: function() {
       if (this.peek() === ";") {
         this.skip();
-        this.skipWhitespace();
-        var properties = Object.create(null);
-        while (/^[A-Z]$/.test(this.peek())) {
-          var property = this.parseProperty();
-          if (property !== undefined) {
-            properties[property.identifier] = property.value;
-          }
-          this.skipWhitespace();
-        }
-        return properties;
       } else {
         this.error("Expected a `;` starting the node, got `" + this.peek() + "`");
       }
+      this.skipWhitespace();
+      var properties = Object.create(null);
+      while (/^[A-Z]$/.test(this.peek())) {
+        var property = this.parseProperty();
+        if (property !== undefined) {
+          properties[property.identifier] = property.value;
+        }
+        this.skipWhitespace();
+      }
+      return properties;
     },
     typeFromPropIdent: function(identifier) {
       switch (identifier) {
