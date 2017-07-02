@@ -30,3 +30,6 @@ sgf.reset(); // Reset sgf.board to the starting position.
   representation of the result. If passed with `--steps`, outputs a
   representation of the board for every move.
 - `./bin/sgf2json.js`: converts SGF to a JSON representation.
+- `./bin/go.js`: plays a game. Defaults to it being played by stdin. It can be
+  set to read inputs from a file, a process (`--black="gnugo --color white
+  --mode ascii`) or from an ai (`--white=probaduk:../tree.json`).
