@@ -81,5 +81,14 @@ validationSgf.forEach(function(sgf) {
 });
 t1 = +Date.now();
 console.error('validation: ' + (t1 - t0).toPrecision(3) + 'ms');
-console.error('Guessed ' + correctGuesses + '/' + guesses +
-  ' (' + (correctGuesses / guesses).toPrecision(3) + ')');
+
+function logPerformance(correctGuesses, guesses, t0, t1) {
+  var accuracy = correctGuesses / guesses;
+  var timePerGuess = (t1 - t0) / guesses / 1000;
+  var ratio = accuracy / timePerGuess;
+  console.error('Guessed ' + correctGuesses + '/' + guesses +
+    ' (' + (accuracy * 100).toPrecision(3) + '%), ' +
+    'time: ' + timePerGuess.toPrecision(3) + 's, ' +
+    'ratio: ' + Math.round(ratio));
+}
+logPerformance(correctGuesses, guesses, t0, t1);

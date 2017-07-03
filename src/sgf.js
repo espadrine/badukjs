@@ -606,6 +606,7 @@
   var IDENT_SIMPLETEXT_SIMPLETEXT = 12;
   var IDENT_NUMBER_SIMPLETEXT = 13;
 
+  exports.Board = Board;
   exports.SGF = SGF;
 
 }));

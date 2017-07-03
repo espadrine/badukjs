@@ -75,8 +75,8 @@ DecisionTree.prototype = {
   guess: function(board, prevMove) {
     var color = board.nextPlayingColor;
     var maxScore = 0;
-    var maxMoveX = 0;
-    var maxMoveY = 0;
+    var maxMoveX = -1;
+    var maxMoveY = -1;
     var boardSize = board.size;
     for (var y = 0; y < boardSize; y++) {
       for (var x = 0; x < boardSize; x++) {
@@ -389,9 +389,9 @@ function sameIntersection(a, b) {
 // Node parameters for decision tree conditions.
 var PARAM_TYPE          = 0;
 var PARAM_LIBERTY_COUNT = 1;
-var PARAM_DIST_MOVE     = 2;
-var PARAM_DIST_EDGE     = 3;
-var PARAM_MOVE_COUNT    = 4;
+//var PARAM_DIST_MOVE     = 2;
+var PARAM_DIST_EDGE     = 2;
+var PARAM_MOVE_COUNT    = 3;
 
 // Parameter values.
 // First, for PARAM_TYPE.
@@ -413,7 +413,7 @@ var VAL_FIFTY_HUNDRED = 1;  // 50-99
 var VAL_HUNDRED       = 2;  // 100-149
 var VAL_HUNDRED_FIFTY = 3;  // 150
 
-var parameters = [PARAM_TYPE, PARAM_LIBERTY_COUNT, PARAM_DIST_MOVE, PARAM_DIST_EDGE, PARAM_MOVE_COUNT];
+var parameters = [PARAM_TYPE, PARAM_LIBERTY_COUNT, /*PARAM_DIST_MOVE,*/ PARAM_DIST_EDGE, PARAM_MOVE_COUNT];
 var valuesForParameter = [];
 valuesForParameter[PARAM_TYPE] = [VAL_OUT, VAL_EMPTY, VAL_FRIEND, VAL_ENEMY];
 valuesForParameter[PARAM_LIBERTY_COUNT] =

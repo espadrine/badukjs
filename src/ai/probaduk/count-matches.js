@@ -47,10 +47,10 @@ function guessGame(sgfContent, filename) {
   return [correct, total];
 }
 
-var sgfDir = path.join(__dirname, '../../../sgf/alphago');
+var sgfDir = path.join(__dirname, '../../../sgf/kgs4d');
 var files = fs.readdirSync(sgfDir);
-var trainingSize = 40;
-var validationSize = 10;
+var trainingSize = 300;
+var validationSize = 20;
 var trainingSet = files.slice(0, trainingSize);
 var validationSet = files.slice(trainingSize, trainingSize + validationSize);
 console.log('training');
