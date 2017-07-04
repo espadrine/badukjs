@@ -335,29 +335,31 @@
       for (var y = 0; y < this.size; y++) {
         for (var x = 0; x < this.size; x++) {
           var intersection = this.board[x + y * this.size];
-          var top = this.get(intersection.x, intersection.y - 1);
-          var left = this.get(intersection.x - 1, intersection.y);
-          if (top !== undefined && top.territory !== null) {
-            top.territory.addIntersection(intersection);
-            if (left !== undefined && left.color === Board.EMPTY) {
-              // Merge left and top territories.
-              var topHasLargerTerritory =
-                (top.territory.intersections.size >
-                 left.territory.intersections.size);
-              var largerTerritory =
-                topHasLargerTerritory? top.territory: left.territory;
-              var smallerTerritory =
-                topHasLargerTerritory? left.territory: top.territory;
-              smallerTerritory.intersections.forEach(
-                function(smallIntersection) {
-                  largerTerritory.addIntersection(smallIntersection);
-                }
-              );
+          if (intersection.color === Board.EMPTY) {
+            var top = this.get(x, y - 1);
+            var left = this.get(x - 1, y);
+            if (top !== undefined && top.territory !== null) {
+              top.territory.addIntersection(intersection);
+              if (left !== undefined && left.territory !== null) {
+                // Merge left and top territories.
+                var topHasLargerTerritory =
+                  (top.territory.intersections.size >
+                   left.territory.intersections.size);
+                var largerTerritory =
+                  topHasLargerTerritory? top.territory: left.territory;
+                var smallerTerritory =
+                  topHasLargerTerritory? left.territory: top.territory;
+                smallerTerritory.intersections.forEach(
+                  function(smallIntersection) {
+                    largerTerritory.addIntersection(smallIntersection);
+                  }
+                );
+              }
+            } else if (left !== undefined && left.territory !== null) {
+              left.territory.addIntersection(intersection);
+            } else {
+              intersection.territory = new Territory(this, [intersection]);
             }
-          } else if (left !== undefined && left.territory !== null) {
-            left.territory.addIntersection(intersection);
-          } else if (intersection.color === Board.EMPTY) {
-            intersection.territory = new Territory(this, [intersection]);
           }
         }
       }
