@@ -17,6 +17,7 @@
     this.y = y;
     this.color = Board.EMPTY;
     this.group = null;
+    this.territory = null;  // Used for score counting.
     // FIXME: set the following values correctly.
     this.wasJustCaptured = false;  // Did a capture just happen here?
     this.turnsSinceLastMove = 0;
@@ -74,6 +75,43 @@
     },
   };
 
+  function Territory(board, intersections) {
+    this.board = board;
+    this.color = -1;  // Unknown color.
+    this.intersections = new Set();
+    var self = this;
+    intersections.forEach(function(intersection) {
+      self.addIntersection(intersection);
+    });
+  }
+
+  Territory.prototype = {
+    addIntersection: function(intersection) {
+      this.intersections.add(intersection);
+      intersection.territory = this;
+      var neighbors = this.board.surrounding(intersection.x, intersection.y);
+      for (var i = 0; i < neighbors.length; i++) {
+        var neighbor = neighbors[i];
+        if (neighbor.color !== Board.EMPTY) {
+          if (this.color === -1) {  // Previously unknown ownership.
+            this.color = neighbor.color;
+          } else if (this.color > Board.EMPTY &&
+                     this.color !== neighbor.color) {
+            // Border contains stones of different colors.
+            this.color = Board.EMPTY;
+          }
+        }
+      }
+    },
+    toString: function() {
+      var intersections = this.intersections.map(function(intersection) {
+        return intersection.toString();
+      });
+      return "(" + stringFromColor(this.color) + " territory on intersections " +
+        intersections.join(", ") + ")";
+    },
+  };
+
   // options:
   //   - size: typically 19.
   //   - komi: floating-point number.
@@ -89,6 +127,7 @@
     }
     this.groups = new Set();
     this.nextPlayingColor = Board.BLACK;
+    this.captures = [0, 0, 0];  // Stones captured by empty, black, white.
     this.numMoves = 0;
   }
 
@@ -232,6 +271,7 @@
       for (var i = 0; i < capturedEnemyGroups.length; i++) {
         var group = capturedEnemyGroups[i];
         self.groups.delete(group);
+        self.captures[color] += group.intersections.size;
         group.intersections.forEach(function(intersection) {
           intersection.group = null;
           intersection.color = Board.EMPTY;
@@ -259,6 +299,67 @@
         this.nextPlayingColor = Board.WHITE;
       } else {
         this.nextPlayingColor = Board.BLACK;
+      }
+    },
+
+    scores: function() {
+      var blackScore = 0, whiteScore = 0;
+      this.computeTerritories();
+      for (var y = 0; y < this.size; y++) {
+        for (var x = 0; x < this.size; x++) {
+          var intersection = this.board[x + y * this.size];
+          if      (intersection.color === Board.BLACK) { blackScore++; }
+          else if (intersection.color === Board.WHITE) { whiteScore++; }
+          else if (intersection.territory.color === Board.BLACK) { blackScore++; }
+          else if (intersection.territory.color === Board.WHITE) { whiteScore++; }
+        }
+      }
+
+      blackScore += this.captures[Board.BLACK];
+      whiteScore += this.captures[Board.WHITE];
+      whiteScore += this.komi;
+      return {black: blackScore, white: whiteScore};
+    },
+
+    // Return the color of the winner (0 if it is a draw).
+    winner: function() {
+      var scores = this.scores();
+      var blackScore = scores.black;
+      var whiteScore = scores.white;
+      if      (blackScore > whiteScore) { return Board.BLACK; }
+      else if (whiteScore > blackScore) { return Board.WHITE; }
+      else { return Board.EMPTY; }
+    },
+
+    computeTerritories: function() {
+      for (var y = 0; y < this.size; y++) {
+        for (var x = 0; x < this.size; x++) {
+          var intersection = this.board[x + y * this.size];
+          var top = this.get(intersection.x, intersection.y - 1);
+          var left = this.get(intersection.x - 1, intersection.y);
+          if (top !== undefined && top.territory !== null) {
+            top.territory.addIntersection(intersection);
+            if (left !== undefined && left.color === Board.EMPTY) {
+              // Merge left and top territories.
+              var topHasLargerTerritory =
+                (top.territory.intersections.size >
+                 left.territory.intersections.size);
+              var largerTerritory =
+                topHasLargerTerritory? top.territory: left.territory;
+              var smallerTerritory =
+                topHasLargerTerritory? left.territory: top.territory;
+              smallerTerritory.intersections.forEach(
+                function(smallIntersection) {
+                  largerTerritory.addIntersection(smallIntersection);
+                }
+              );
+            }
+          } else if (left !== undefined && left.territory !== null) {
+            left.territory.addIntersection(intersection);
+          } else if (intersection.color === Board.EMPTY) {
+            intersection.territory = new Territory(this, [intersection]);
+          }
+        }
       }
     },
 

@@ -23,4 +23,6 @@ process.stdin.on('end', function() {
     sgf.run();
   }
   console.log(sgf.board.toString());
+  var scores = sgf.board.scores();
+  console.log("Black: " + scores.black + ", White: " + scores.white);
 });
