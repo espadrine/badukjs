@@ -34,7 +34,7 @@
 
   Intersection.prototype = {
     toString: function() {
-      return boardCoordFromNum(this.x) + boardCoordFromNum(this.y);
+      return coordFromNum(this.x) + coordFromNum(this.y);
     },
   };
 
@@ -368,7 +368,7 @@
     toString: function() {
       var rows = "  ";
       for (var i = 0; i < this.size; i++) {
-        rows += boardCoordFromNum(i);
+        rows += coordFromNum(i);
       }
       rows += "\n ┌";
       for (var i = 0; i < this.size; i++) {
@@ -376,7 +376,7 @@
       }
       rows += "┐\n";
       for (var y = 0; y < this.size; y++) {
-        rows += boardCoordFromNum(y) + "│";
+        rows += coordFromNum(y) + "│";
         for (var x = 0; x < this.size; x++) {
           var intersection = this.directGet(x, y);
           if (intersection.color === Board.EMPTY) {
@@ -411,11 +411,15 @@
   }
   Board.stringFromColor = stringFromColor;
 
-  function boardCoordFromNum(number) {
+  function coordFromNum(number) {
     if (number < 26) { return String.fromCharCode(97 + number); }
     else { return String.fromCharCode(65 + number - 26); }
   }
-  Board.boardCoordFromNum = boardCoordFromNum;
+  Board.coordFromNum = coordFromNum;
+  function coordFromMove(move) {
+    return coordFromNum(move.x) + coordFromNum(move.y);
+  }
+  Board.coordFromMove = coordFromMove;
 
   exports.Board = Board;
 
