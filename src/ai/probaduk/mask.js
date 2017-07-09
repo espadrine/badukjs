@@ -25,8 +25,16 @@ function Mask(parentMask, parentMatchBits) {
 }
 
 Mask.prototype = {
-  load: function(stats) {
-    // TODO
+  // json: array of [bitMask, moveMatches, matches].
+  load: function(json) {
+    for (var i = 0; i < json.length; i++) {
+      var pattern = json[i];
+      var stat = new Stats();
+      stat.moveMatches = pattern[1];
+      stat.matches     = pattern[2];
+      this.map.set(pattern[0], stat);
+    }
+    return this;
   },
 
   score: function(matchBits) {
@@ -94,18 +102,26 @@ Mask.prototype = {
     } else if (intersection.color === Board.EMPTY) {
       return 1;
     } else if (intersection.color === color) {
-      return 2;
-    } else { return 3; }
+      var liberties = intersection.group.liberties.size;
+      if (liberties === 1) { return 2; }
+      else if (liberties === 2) { return 3; }
+      else { return 4; }
+    } else {
+      var liberties = intersection.group.liberties.size;
+      if (liberties === 1) { return 5; }
+      else if (liberties === 2) { return 6; }
+      else { return 7; }
+    }
   },
   matchBits: function(board, x, y) {
-    var matchBits = 0;
-    var color = board.nextPlayingColor;
+    //var matchBits = 0;
+    var matchBits = '';
+    var color = +board.nextPlayingColor;
     var mask = this.mask;
-    var maskLength = mask.length;
+    var maskLength = mask.length|0;
     for (var i = 0; i < maskLength; i++) {
       var neighbor = board.get(x + mask[i][0], y + mask[i][1]);
-      matchBits <<= 2;
-      matchBits += this.bitsFromIntersection(neighbor, color);
+      matchBits += String.fromCharCode(this.bitsFromIntersection(neighbor, color)|0);
     }
     return matchBits;
   },
@@ -159,29 +175,40 @@ Mask.prototype = {
     for (var y = 0; y < height; y++) {
       boardRect[y] = [];
       for (var x = 0; x < width; x++) {
-        boardRect[y][x] = ' ';
+        boardRect[y][x] = '  ';
       }
       boardRect[y].push('\n');
     }
     this.addMatchesToLog(boardRect, matchBits, minX, minY);
-    boardRect[-minY][-minX] = '·';
+    boardRect[-minY][-minX] = ' ·';
 
     console.log(boardRect.map(function(e) {return e.join('');}).join('')
       + stats.toString());
   },
+  stringFromMatchBit: function(matchBitsForMaskPoint) {
+    if (matchBitsForMaskPoint === 0) {  // outside
+      return ' ∅';
+    } else if (matchBitsForMaskPoint === 1) {  // empty
+      return '  ';
+    } else if (matchBitsForMaskPoint === 2) {  // same color
+      return '1●';
+    } else if (matchBitsForMaskPoint === 3) {  // same color
+      return '2●';
+    } else if (matchBitsForMaskPoint === 4) {  // same color
+      return '3●';
+    } else if (matchBitsForMaskPoint === 5) {  // different color
+      return '1○';
+    } else if (matchBitsForMaskPoint === 6) {  // different color
+      return '2○';
+    } else if (matchBitsForMaskPoint === 7) {  // different color
+      return '3○';
+    }
+  },
   addMatchesToLog: function(boardRect, matchBits, minX, minY) {
     var maskMatchPoint = new Array(this.mask.length);
     for (var i = 0; i < this.mask.length; i++) {
-      var matchBitsForMaskPoint = ((3 << (2 * i)) & matchBits) >> (2 * i);
-      if (matchBitsForMaskPoint === 0) {  // outside
-        maskMatchPoint[i] = '∅';
-      } else if (matchBitsForMaskPoint === 1) {  // empty
-        maskMatchPoint[i] = ' ';
-      } else if (matchBitsForMaskPoint === 2) {  // same color
-        maskMatchPoint[i] = '●';
-      } else if (matchBitsForMaskPoint === 3) {  // different color
-        maskMatchPoint[i] = '○';
-      }
+      var matchBitsForMaskPoint = matchBits[i].charCodeAt(0);
+      maskMatchPoint[i] = this.stringFromMatchBit(matchBitsForMaskPoint);
     }
     for (var i = 0; i < maskMatchPoint.length; i++) {
       var x = this.mask[i][0] - minX;
@@ -192,6 +219,18 @@ Mask.prototype = {
       this.parentMask.addMatchesToLog(boardRect,
         this.parentMatchBits, minX, minY);
     }
+  },
+  toJSON: function() {
+    var patterns = [];
+    var counter = 0;
+    var self = this;
+    this.map.forEach(function(stats, bitMask) {
+      if (self.wilsonScore(stats.moveMatches, stats.matches) > 0.1) {
+        patterns.push([bitMask, stats.moveMatches, stats.matches]);
+        counter++;
+      }
+    });
+    return patterns;
   },
 };
 

@@ -2,32 +2,32 @@ var fs = require('fs');
 var path = require('path');
 var Baduk = require('../../sgf.js');
 var SGF = Baduk.SGF;
-var mask = require('./mask.js');
+var Mask = require('./mask.js');
 
 var sgf = new SGF();
-var mask3 = new mask.Mask3();
+var mask = new Mask.Mask2();
 
 function aggregateFromGame(sgf) {
   while (sgf.step()) {
     var move = sgf.nextMove();
-    mask3.readFromBoard(sgf.board, move);
+    mask.readFromBoard(sgf.board, move);
   }
 }
 
 function computeSgf(sgfContent, filename) {
   sgf.parse(String(sgfContent), {filename: filename, error: console.error});
-  aggregateFromGame(sgf);
   // Perform this for each game symmetry and reflection.
+  aggregateFromGame(sgf);
   for (var i = 0; i < 3; i++) {
     sgf.rotate(1);
     aggregateFromGame(sgf);
   }
-  sgf.rotate(1);
   sgf.flipHorizontally();
   aggregateFromGame(sgf);
-  sgf.flipHorizontally();
-  sgf.flipVertically();
-  aggregateFromGame(sgf);
+  for (var i = 0; i < 3; i++) {
+    sgf.rotate(1);
+    aggregateFromGame(sgf);
+  }
 }
 
 // Compute the number of correct guesses and overall guesses [correct, total].
@@ -38,7 +38,7 @@ function guessGame(sgfContent, filename) {
   while (sgf.step()) {
     var move = sgf.nextMove();
     if (move.x < 0) { continue; }
-    var guess = mask3.guess(sgf.board);//guessMove(sgf.board);
+    var guess = mask.guess(sgf.board);//guessMove(sgf.board);
     if (guess.move.x === move.x && guess.move.y === move.y) {
       correct++;
     }
@@ -49,19 +49,25 @@ function guessGame(sgfContent, filename) {
 
 var sgfDir = path.join(__dirname, '../../../sgf/kgs4d');
 var files = fs.readdirSync(sgfDir);
-var trainingSize = 300;
-var validationSize = 20;
+var trainingSize = 500;
+var validationSize = 100;
 var trainingSet = files.slice(0, trainingSize);
 var validationSet = files.slice(trainingSize, trainingSize + validationSize);
-console.log('training');
+console.error('start training');
 
-console.time('training');
+t0 = +Date.now();
 trainingSet.forEach(function(filename) {
   var sgfContent = fs.readFileSync(path.join(sgfDir, filename));
   computeSgf(sgfContent, filename);
 });
-console.timeEnd('training');
+t1 = +Date.now();
+console.error('training: ' + (t1 - t0).toPrecision(3) + 'ms');
 
+// Output the mask matches.
+var output = mask.toJSON();
+console.log(JSON.stringify(output));
+
+mask = (new Mask.Mask2()).load(output);
 var correct = 0;
 var total = 0;
 var vt0 = +Date.now();
@@ -72,9 +78,25 @@ validationSet.forEach(function(filename) {
   total += accuracy[1];
 });
 var vt1 = +Date.now();
+console.error('validation: ' + (vt1 - vt0).toPrecision(3) + 'ms');
 var accuracy = correct / total;
 var timePerGuess = ((vt1 - vt0) / total / 1000);  // in s.
-console.log('Accuracy: ' + correct + '/' + total +
+console.error('Accuracy: ' + correct + '/' + total +
   ' (' + (accuracy * 100).toPrecision(3) + '%), ' +
   'time: ' + timePerGuess.toPrecision(3) + 's, ' +
   'ratio: ' + Math.round(accuracy / timePerGuess));
+console.error('Total:', mask.map.size, 'matches');
+
+function logMatches() {
+  var bitMasks = [...mask.map.keys()];
+  bitMasks.sort((bm1, bm2) => {
+    var st1 = mask.map.get(bm1);
+    var st2 = mask.map.get(bm2);
+    var ws1 = mask.wilsonScore(st1.moveMatches, st1.matches);
+    var ws2 = mask.wilsonScore(st2.moveMatches, st2.matches);
+    return ws2 - ws1;
+  });
+  bitMasks.forEach(function(bitMask) {
+    mask.logMatch(bitMask);
+  });
+}
