@@ -71,16 +71,20 @@ Mask.prototype = {
   guess: function(board) {
     var maxScore = 0;
     var maxMove = {x: -1, y: -1};
+    var moves = [];
     for (var y = 0; y < board.size; y++) {
       for (var x = 0; x < board.size; x++) {
+        var intersection = board.directGet(x, y);
+        if (intersection.color !== Board.EMPTY) { continue; }
         var score = this.rate(board, x, y);
         if (score > maxScore) {
           maxScore = score;
           maxMove = {x: x, y: y};
         }
+        moves.push({x: x, y: y, score: score});
       }
     }
-    return {move: maxMove, score: maxScore};
+    return {x: maxMove.x, y: maxMove.y, score: maxScore, moves: moves};
   },
 
   getOrAddStats: function(bitsMatch) {

@@ -38,8 +38,8 @@ function guessGame(sgfContent, filename) {
   while (sgf.step()) {
     var move = sgf.nextMove();
     if (move.x < 0) { continue; }
-    var guess = mask.guess(sgf.board);//guessMove(sgf.board);
-    if (guess.move.x === move.x && guess.move.y === move.y) {
+    var guess = mask.guess(sgf.board);
+    if (guess.x === move.x && guess.y === move.y) {
       correct++;
     }
     total++;
