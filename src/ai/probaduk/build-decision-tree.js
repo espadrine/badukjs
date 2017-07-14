@@ -42,11 +42,11 @@ function computeSgf(sgf, analyseMove) {
   }
   sgf.flipHorizontally();
   aggregateFromGame(sgf, analyseMove);
+  for (var i = 0; i < 3; i++) {
+    sgf.rotate(1);
+    aggregateFromGame(sgf, analyseMove);
+  }
   sgf.flipHorizontally();
-  sgf.flipVertically();
-  aggregateFromGame(sgf, analyseMove);
-  sgf.flipVertically();
-  sgf.rotate(1);
 }
 
 var games = fs.readdirSync(gamesDir);
@@ -64,8 +64,10 @@ var tree = DecisionTree.learn(treeSize, function train(analyseMove) {
 });
 t1 = +Date.now();
 console.error('training: ' + (t1 - t0).toPrecision(3) + 'ms');
-console.log(JSON.stringify(tree));
+var output = tree.toJSON();
+console.log(JSON.stringify(output));
 
+tree = DecisionTree.load(output);
 t0 = +Date.now();
 var guesses = 0;
 var correctGuesses = 0;
