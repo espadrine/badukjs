@@ -77,6 +77,7 @@ DecisionTree.prototype = {
     var maxScore = 0;
     var maxMoveX = -1;
     var maxMoveY = -1;
+    var moves = [];
     var boardSize = board.size;
     for (var y = 0; y < boardSize; y++) {
       for (var x = 0; x < boardSize; x++) {
@@ -88,9 +89,10 @@ DecisionTree.prototype = {
           maxMoveX = x;
           maxMoveY = y;
         }
+        moves.push({x: x, y: y, score: intersection.score});
       }
     }
-    return {x: maxMoveX, y: maxMoveY, score: maxScore};
+    return {x: maxMoveX, y: maxMoveY, score: maxScore, moves: moves};
   },
   toJSON: function() {
     return {
@@ -389,7 +391,7 @@ function sameIntersection(a, b) {
 // Node parameters for decision tree conditions.
 var PARAM_TYPE          = 0;
 var PARAM_LIBERTY_COUNT = 1;
-//var PARAM_DIST_MOVE     = 2;
+var PARAM_DIST_MOVE     = 2; // removed
 var PARAM_DIST_EDGE     = 2;
 var PARAM_MOVE_COUNT    = 3;
 
