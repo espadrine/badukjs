@@ -393,7 +393,9 @@
       for (var i = 0; i < this.size; i++) {
         rows += "─";
       }
-      rows += "┘";
+      rows += "┘\n";
+      rows += "Captured: black " + this.captures[Board.BLACK] +
+                      ", white " + this.captures[Board.WHITE];
       return rows;
     },
   };
