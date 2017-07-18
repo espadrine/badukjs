@@ -204,6 +204,66 @@
       return neighbors;
     },
 
+    isValidMove: function(x, y) {
+      var self = this;
+      if (!this.has(x, y)) { return false; }
+      var intersection = self.directGet(x, y);
+      var color = self.nextPlayingColor;
+      if (intersection.color !== Board.EMPTY) { return false; }
+      self.directSet(x, y, color);
+
+      // Get surrounding groups.
+      var surrounding = self.surrounding(x, y);
+      var surroundingGroups = [];
+      var ownSurroundingGroups = [];
+      var enemySurroundingGroups = [];
+      var capturedEnemyGroups = [];
+      for (var i = 0; i < surrounding.length; i++) {
+        var neighbor = surrounding[i];
+        if (neighbor.color !== Board.EMPTY) {
+          var group = neighbor.group;
+          surroundingGroups.push(group);
+          if (group.color === color) {
+            ownSurroundingGroups.push(group);
+          } else {
+            enemySurroundingGroups.push(group);
+            if (group.liberties.size === 1) {
+              capturedEnemyGroups.push(group);
+            }
+          }
+        }
+      }
+
+      if (capturedEnemyGroups.length === 0) {
+        // We are not capturing enemy stones. Are we committing suicide?
+        var numberOfEmptyNeighbors = 0;
+        for (var i = 0; i < surrounding.length; i++) {
+          var neighbor = surrounding[i];
+          if (neighbor.color === Board.EMPTY) {
+            numberOfEmptyNeighbors++;
+          }
+        }
+        var isLastLibertyOfAllOwnGroups = true;
+        for (var i = 0; i < ownSurroundingGroups.length; i++) {
+          var group = ownSurroundingGroups[i];
+          if (group.liberties.size !== 1) {
+            isLastLibertyOfAllOwnGroups = false;
+            break;
+          }
+        }
+        var isKillingOwnGroup = isLastLibertyOfAllOwnGroups &&
+                                (numberOfEmptyNeighbors === 0);
+        if (isKillingOwnGroup) {
+          // Undo the insertion of a stone.
+          self.directSet(x, y, Board.EMPTY);
+          return false;
+        }
+      }
+      // Undo the insertion of a stone.
+      self.directSet(x, y, Board.EMPTY);
+      return true;
+    },
+
     // Place a stone. Returns true if the move was valid.
     play: function(x, y) {
       var self = this;
