@@ -5,10 +5,15 @@ var Baduk = require('../src/sgf.js');
 var Board = Baduk.Board;
 
 function getMoveFromStream(stream, player, cb) {
+  var buffer = '';
   stream.once('data', function(chunk) {
-    console.error(String(chunk));
-    var move = parseInput(String(chunk), player);
-    if (move !== undefined) { cb(move); }
+    process.stderr.write(String(chunk));
+    buffer += String(chunk);
+    var move = parseInput(buffer, player);
+    if (move !== undefined) {
+      buffer = '';
+      cb(move);
+    }
     else { getMoveFromStream(stream, player, cb); }
   });
 };
@@ -26,12 +31,16 @@ function buildPlayer(source) {
     var match = /^probaduk:(.*)$/.exec(source);
     var jsonBrain = require(match[1]);
     var Probaduk = require('../src/ai/probaduk/decision-tree.js');
-    var moveGuesser = Probaduk.load(jsonBrain);
+    var weakMoveGuesser = Probaduk.load(jsonBrain);
+    var MCTS = require('../src/mcts.js');
+    var moveGuesser = new MCTS(weakMoveGuesser);
     return {
       type: 'ai',
       play: function(board, prevMove, cb) {
         if (board.moves > 500) { cb({x:-1}); return; }
-        cb(moveGuesser.guess(board, prevMove));
+        moveGuesser.movePlayed(prevMove);
+        moveGuesser.simulateNTimes(256);
+        cb(moveGuesser.guess(board));
       },
     };
   } else {  // From a process.
@@ -41,8 +50,7 @@ function buildPlayer(source) {
       type: atoms[0],
       play: function(board, prevMove, cb) {
         if (prevMove) {
-          var moveStr = displayMove(prevMove) + "\n" +
-            displayGnuGoMove(prevMove) + "\n";
+          var moveStr = displayGnuGoMove(prevMove) + "\n";
           process.stdin.write(moveStr);
         }
         getMoveFromStream(process.stdout, this, cb);
@@ -73,6 +81,8 @@ function parseInput(input, player) {
       var x = rowNumFromGnuGoName(match[2]);
       var y = board.size - (+match[3]);
       return {x: x, y: y};
+    } else if (/(black|white)\(\d+\): PASS/.test(input)) {
+      return {x: -1, y: -1};
     }
   } else {
     if (/^[a-zA-Z]{2}$/.test(input)) {
