@@ -18,9 +18,9 @@
     this.color = Board.EMPTY;
     this.group = null;
     this.territory = null;  // Used for score counting.
+    this.turnPlayed = -1;
     // FIXME: set the following values correctly.
     this.wasJustCaptured = false;  // Did a capture just happen here?
-    this.turnsSinceLastMove = 0;
     // Change in number of own/enemy liberties from making a move here.
     this.ownLibertiesChange = 0;
     this.enemyLibertiesChange = 0;
@@ -347,6 +347,7 @@
         });
       }
 
+      intersection.turnPlayed = self.numMoves;
       self.numMoves++;
       self.nextTurn();
       return true;

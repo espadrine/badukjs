@@ -80,3 +80,20 @@ var Board = Baduk.Board;
   assert.equal(board.get(0, 0).color, Board.EMPTY);
   assert.equal(board.nextPlayingColor, Board.WHITE);
 }
+
+// Test numMoves and intersection turnPlayed.
+{
+  board = new Board();
+
+  board.play(0, 0);
+  board.play(1, 0);
+  board.play(2, 0);
+  // oxo
+
+  assert.equal(board.numMoves, 3);
+  assert.equal(board.get(0, 0).turnPlayed, 0);
+  assert.equal(board.get(1, 0).turnPlayed, 1);
+  assert.equal(board.get(2, 0).turnPlayed, 2);
+  assert.equal(board.get(3, 0).turnPlayed, -1);
+}
+
