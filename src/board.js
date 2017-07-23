@@ -19,15 +19,15 @@
     this.group = null;
     this.territory = null;  // Used for score counting.
     this.turnPlayed = -1;
+    this.capturesFromMove = 0;  // Number of enemy stones it would capture.
+    // Number of own stones it would place in jeopardy.
+    this.selfAtariFromMove = 0;
+    this.sensibleMove = true;  // ie, legal and does not fill its own eyes.
     // FIXME: set the following values correctly.
     this.wasJustCaptured = false;  // Did a capture just happen here?
     // Change in number of own/enemy liberties from making a move here.
     this.ownLibertiesChange = 0;
     this.enemyLibertiesChange = 0;
-    this.capturesFromMove = 0;  // Number of enemy stones it would capture.
-    // Number of own stones it would place in jeopardy.
-    this.selfAtariFromMove = 0;
-    this.sensibleMove = true;  // ie, legal and does not fill its own eyes.
     this.leadsToLadderCapture = false;
     this.leadsToLadderEscape = false;
   }
@@ -204,6 +204,9 @@
       return neighbors;
     },
 
+    // Returns true if the move is authorized by the game rules.
+    // Sets the intersection's capturesFromMove, selfAtariFromMove,
+    // sensibleMove.
     isValidMove: function(x, y) {
       var self = this;
       if (!this.has(x, y)) { return false; }
@@ -218,6 +221,8 @@
       var ownSurroundingGroups = [];
       var enemySurroundingGroups = [];
       var capturedEnemyGroups = [];
+      var capturesFromMove = 0;
+      var selfAtariFromMove = 0;
       for (var i = 0; i < surrounding.length; i++) {
         var neighbor = surrounding[i];
         if (neighbor.color !== Board.EMPTY) {
@@ -243,22 +248,30 @@
             numberOfEmptyNeighbors++;
           }
         }
-        var isLastLibertyOfAllOwnGroups = true;
+        var libertiesLeft = numberOfEmptyNeighbors;
+        var newGroupSize = 1;
         for (var i = 0; i < ownSurroundingGroups.length; i++) {
           var group = ownSurroundingGroups[i];
-          if (group.liberties.size !== 1) {
-            isLastLibertyOfAllOwnGroups = false;
-            break;
-          }
+          libertiesLeft += group.liberties.size - 1;
+          newGroupSize += group.intersections.size;
         }
-        var isKillingOwnGroup = isLastLibertyOfAllOwnGroups &&
-                                (numberOfEmptyNeighbors === 0);
+        var isKillingOwnGroup = libertiesLeft === 0;
+        var isSelfAtari = libertiesLeft === 1;
         if (isKillingOwnGroup) {
           // Undo the insertion of a stone.
           self.directSet(x, y, Board.EMPTY);
+          intersection.sensibleMove = false;
           return false;
+        } else if (isSelfAtari) {
+          intersection.selfAtariFromMove = newGroupSize;
         }
+      } else {  // We are capturing enemy stones.
+        for (var i = 0; i < capturedEnemyGroups.length; i++) {
+          capturesFromMove += capturedEnemyGroups[i].intersections.size;
+        }
+        intersection.capturesFromMove = capturesFromMove;
       }
+
       // Undo the insertion of a stone.
       self.directSet(x, y, Board.EMPTY);
       return true;
