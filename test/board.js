@@ -97,7 +97,7 @@ var Board = Baduk.Board;
   assert.equal(board.get(3, 0).turnPlayed, -1);
 }
 
-// Test capturesFromMove, selfAtariFromMove, sensibleMove.
+// Test capturesFromMove, selfAtariFromMove, libertiesFromMove, sensibleMove.
 {
   board = new Board();
 
@@ -116,10 +116,12 @@ var Board = Baduk.Board;
   assert.equal(intersection.sensibleMove, false);
   assert.equal(intersection.selfAtariFromMove, 0);
   assert.equal(intersection.capturesFromMove, 0);
+  assert.equal(intersection.libertiesFromMove, 0);
   assert.equal(board.isValidMove(3, 0), true);
   var intersection = board.get(3, 0);
   assert.equal(intersection.sensibleMove, true);
   assert.equal(intersection.selfAtariFromMove, 2);
+  assert.equal(intersection.libertiesFromMove, 1);
 
   board.play(3, 0);
   //  xoox
@@ -128,4 +130,7 @@ var Board = Baduk.Board;
   assert.equal(board.isValidMove(2, 1), true);
   var intersection = board.get(2, 1);
   assert.equal(intersection.capturesFromMove, 2);
+  // FIXME: Technically, libertiesFromMove should be 6,
+  // but that's harder to compute.
+  assert.equal(intersection.libertiesFromMove, 5);
 }

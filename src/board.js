@@ -22,6 +22,7 @@
     this.capturesFromMove = 0;  // Number of enemy stones it would capture.
     // Number of own stones it would place in jeopardy.
     this.selfAtariFromMove = 0;
+    this.libertiesFromMove = 0; // Group liberty count from move.
     this.sensibleMove = true;  // ie, legal and does not fill its own eyes.
     // FIXME: set the following values correctly.
     this.wasJustCaptured = false;  // Did a capture just happen here?
@@ -206,7 +207,7 @@
 
     // Returns true if the move is authorized by the game rules.
     // Sets the intersection's capturesFromMove, selfAtariFromMove,
-    // sensibleMove.
+    // libertiesFromMove, sensibleMove.
     isValidMove: function(x, y) {
       var self = this;
       if (!this.has(x, y)) { return false; }
@@ -223,6 +224,7 @@
       var capturedEnemyGroups = [];
       var capturesFromMove = 0;
       var selfAtariFromMove = 0;
+      var libertiesFromMove = 0;
       for (var i = 0; i < surrounding.length; i++) {
         var neighbor = surrounding[i];
         if (neighbor.color !== Board.EMPTY) {
@@ -239,24 +241,25 @@
         }
       }
 
+      var numberOfEmptyNeighbors = 0;
+      for (var i = 0; i < surrounding.length; i++) {
+        var neighbor = surrounding[i];
+        if (neighbor.color === Board.EMPTY) {
+          numberOfEmptyNeighbors++;
+        }
+      }
+      libertiesFromMove = numberOfEmptyNeighbors;
+      var newGroupSize = 1;
+      for (var i = 0; i < ownSurroundingGroups.length; i++) {
+        var group = ownSurroundingGroups[i];
+        libertiesFromMove += group.liberties.size - 1;
+        newGroupSize += group.intersections.size;
+      }
+
       if (capturedEnemyGroups.length === 0) {
         // We are not capturing enemy stones. Are we committing suicide?
-        var numberOfEmptyNeighbors = 0;
-        for (var i = 0; i < surrounding.length; i++) {
-          var neighbor = surrounding[i];
-          if (neighbor.color === Board.EMPTY) {
-            numberOfEmptyNeighbors++;
-          }
-        }
-        var libertiesLeft = numberOfEmptyNeighbors;
-        var newGroupSize = 1;
-        for (var i = 0; i < ownSurroundingGroups.length; i++) {
-          var group = ownSurroundingGroups[i];
-          libertiesLeft += group.liberties.size - 1;
-          newGroupSize += group.intersections.size;
-        }
-        var isKillingOwnGroup = libertiesLeft === 0;
-        var isSelfAtari = libertiesLeft === 1;
+        var isKillingOwnGroup = libertiesFromMove === 0;
+        var isSelfAtari = libertiesFromMove === 1;
         if (isKillingOwnGroup) {
           // Undo the insertion of a stone.
           self.directSet(x, y, Board.EMPTY);
@@ -266,11 +269,13 @@
           intersection.selfAtariFromMove = newGroupSize;
         }
       } else {  // We are capturing enemy stones.
+        libertiesFromMove += capturedEnemyGroups.length;
         for (var i = 0; i < capturedEnemyGroups.length; i++) {
           capturesFromMove += capturedEnemyGroups[i].intersections.size;
         }
         intersection.capturesFromMove = capturesFromMove;
       }
+      intersection.libertiesFromMove = libertiesFromMove;
 
       // Undo the insertion of a stone.
       self.directSet(x, y, Board.EMPTY);
