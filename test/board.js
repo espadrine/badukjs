@@ -134,3 +134,85 @@ var Board = Baduk.Board;
   // but that's harder to compute.
   assert.equal(intersection.libertiesFromMove, 5);
 }
+
+// Test ko rule
+{
+  board = new Board();
+
+  board.play(1, 0);
+  board.play(2, 0);
+  board.play(0, 1);
+  board.play(3, 1);
+  board.play(1, 2);
+  board.play(2, 2);
+  board.play(2, 1);
+  //  xo
+  // x xo
+  //  xo
+
+  assert.equal(board.isValidMove(1, 1), true);
+  var intersection = board.get(1, 1);
+  assert.equal(intersection.sensibleMove, true);
+  assert(board.play(1, 1));
+
+  // Try to play the Ko.
+  //  xo
+  // xo.o
+  //  xo
+  assert.equal(board.isValidMove(2, 1), false);
+  var intersection = board.get(2, 1);
+  assert.equal(intersection.sensibleMove, false);
+  assert(!board.play(2, 1));
+
+  // Play elsewhere.
+  assert(board.play(0, 0));
+  board.pass();
+
+  // Play the Ko again.
+  assert(board.isValidMove(2, 1));
+  var intersection = board.get(2, 1);
+  assert(intersection.sensibleMove);
+  assert(board.play(2, 1));
+}
+
+// Test superko rule
+{
+  board = new Board();
+
+  board.play(1, 0); board.play(2, 0); board.play(0, 1); board.play(3, 1);
+  board.play(1, 2); board.play(2, 2); board.play(2, 1);
+  //  xo
+  // x xo
+  //  xo
+  board.play(4, 0); board.play(5, 0); board.play(4, 2); board.play(5, 2);
+  board.play(5, 1); board.play(6, 1); board.pass();
+  //  xo ox
+  // x xo ox
+  //  xo ox
+  board.play(7, 0); board.play(8, 0); board.play(7, 2); board.play(8, 2);
+  board.play(8, 1); board.play(9, 1); board.pass();
+  //  xo ox xo
+  // x xo ox xo
+  //  xo ox xo
+
+  board.play(1, 1); board.play(4, 1); board.play(7, 1);
+  //  xo ox xo
+  // xo.ox.xo.o
+  //  xo ox xo
+
+  // Try to play the Ko.
+  assert(!board.isValidMove(2, 1));
+  var intersection = board.get(2, 1);
+  assert(!intersection.sensibleMove);
+  assert(!board.play(2, 1));
+
+  // Play elsewhere.
+  assert(board.play(0, 0));
+  board.pass();
+
+  // Play the Ko again.
+  assert(board.isValidMove(2, 1));
+  var intersection = board.get(2, 1);
+  assert(intersection.sensibleMove);
+  assert(board.play(2, 1));
+}

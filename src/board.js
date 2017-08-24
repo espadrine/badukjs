@@ -130,6 +130,10 @@
     this.nextPlayingColor = Board.BLACK;
     this.captures = [0, 0, 0];  // Stones captured by empty, black, white.
     this.numMoves = 0;
+    // Map from intersection of singly captured stone to the intersection
+    // of the stone that captured it.
+    // Used for Ko detection.
+    this.consequentSingleCaptures = new Map();
   }
 
   Board.prototype = {
@@ -216,6 +220,12 @@
       if (intersection.color !== Board.EMPTY) { return false; }
       self.directSet(x, y, color);
 
+      // Reset properties.
+      intersection.capturesFromMove = 0;
+      intersection.selfAtariFromMove = 0;
+      intersection.libertiesFromMove = 0;
+      intersection.sensibleMove = true;
+
       // Get surrounding groups.
       var surrounding = self.surrounding(x, y);
       var surroundingGroups = [];
@@ -236,6 +246,7 @@
             enemySurroundingGroups.push(group);
             if (group.liberties.size === 1) {
               capturedEnemyGroups.push(group);
+              capturesFromMove += group.intersections.size;
             }
           }
         }
@@ -270,12 +281,29 @@
         }
       } else {  // We are capturing enemy stones.
         libertiesFromMove += capturedEnemyGroups.length;
-        for (var i = 0; i < capturedEnemyGroups.length; i++) {
-          capturesFromMove += capturedEnemyGroups[i].intersections.size;
-        }
         intersection.capturesFromMove = capturesFromMove;
       }
       intersection.libertiesFromMove = libertiesFromMove;
+
+      // To detect Kos and Superkos, we ask the following question:
+      // Did we have a stone at X capturing the stone at Y, and now play a stone
+      // at Y capturing the stone at X, in the same sequence of plays that
+      // capture exactly one stone?
+      if (capturesFromMove === 1) {
+        // We have captured a single stone; are we playing an illegal Ko?
+        var playedInterIdx = x + y * this.size;
+        var capturedInter = capturedEnemyGroups[0].intersections
+          .values().next().value;
+        var capturedInterIdx = capturedInter.x + capturedInter.y * this.size;
+        // Has the stone we just captured previously captured a single stone
+        // in playedInterIdx?
+        if (self.consequentSingleCaptures.get(playedInterIdx) === capturedInterIdx) {
+          // Undo the insertion of a stone.
+          self.directSet(x, y, Board.EMPTY);
+          intersection.sensibleMove = false;
+          return false;
+        }
+      }
 
       // Undo the insertion of a stone.
       self.directSet(x, y, Board.EMPTY);
@@ -297,6 +325,7 @@
       var ownSurroundingGroups = [];
       var enemySurroundingGroups = [];
       var capturedEnemyGroups = [];
+      var capturesFromMove = 0;
       for (var i = 0; i < surrounding.length; i++) {
         var neighbor = surrounding[i];
         if (neighbor.color !== Board.EMPTY) {
@@ -308,6 +337,7 @@
             enemySurroundingGroups.push(group);
             if (group.liberties.size === 1) {
               capturedEnemyGroups.push(group);
+              capturesFromMove += group.intersections.size;
             }
           }
         }
@@ -337,6 +367,28 @@
           self.directSet(x, y, Board.EMPTY);
           return false;
         }
+      }
+
+      // To detect Kos and Superkos, we ask the following question:
+      // Did we have a stone at X capturing the stone at Y, and now play a stone
+      // at Y capturing the stone at X, in the same sequence of plays that
+      // capture exactly one stone?
+      if (capturesFromMove === 1) {
+        // We have captured a single stone; are we playing an illegal Ko?
+        var playedInterIdx = x + y * this.size;
+        var capturedInter = capturedEnemyGroups[0].intersections
+          .values().next().value;
+        var capturedInterIdx = capturedInter.x + capturedInter.y * this.size;
+        // Has the stone we just captured previously captured a single stone
+        // in playedInterIdx?
+        if (self.consequentSingleCaptures.get(playedInterIdx) === capturedInterIdx) {
+          // Undo the insertion of a stone.
+          self.directSet(x, y, Board.EMPTY);
+          return false;
+        }
+        self.consequentSingleCaptures.set(capturedInterIdx, playedInterIdx)
+      } else {
+        self.consequentSingleCaptures = new Map();
       }
 
       self.mergeStoneInGroups(intersection, ownSurroundingGroups);
