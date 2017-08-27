@@ -111,15 +111,15 @@ var Board = Baduk.Board;
   //  xo x
   // x  x
 
-  assert.equal(board.isValidMove(0, 0), false);
+  assert(!board.isValidMove(0, 0));
   var intersection = board.get(0, 0);
-  assert.equal(intersection.sensibleMove, false);
+  assert(!intersection.sensibleMove);
   assert.equal(intersection.selfAtariFromMove, 0);
   assert.equal(intersection.capturesFromMove, 0);
   assert.equal(intersection.libertiesFromMove, 0);
-  assert.equal(board.isValidMove(3, 0), true);
+  assert(board.isValidMove(3, 0));
   var intersection = board.get(3, 0);
-  assert.equal(intersection.sensibleMove, true);
+  assert(intersection.sensibleMove);
   assert.equal(intersection.selfAtariFromMove, 2);
   assert.equal(intersection.libertiesFromMove, 1);
 
@@ -127,7 +127,7 @@ var Board = Baduk.Board;
   //  xoox
   // x  x
 
-  assert.equal(board.isValidMove(2, 1), true);
+  assert(board.isValidMove(2, 1));
   var intersection = board.get(2, 1);
   assert.equal(intersection.capturesFromMove, 2);
   // FIXME: Technically, libertiesFromMove should be 6,
@@ -150,18 +150,18 @@ var Board = Baduk.Board;
   // x xo
   //  xo
 
-  assert.equal(board.isValidMove(1, 1), true);
+  assert(board.isValidMove(1, 1));
   var intersection = board.get(1, 1);
-  assert.equal(intersection.sensibleMove, true);
+  assert(intersection.sensibleMove);
   assert(board.play(1, 1));
 
   // Try to play the Ko.
   //  xo
   // xo.o
   //  xo
-  assert.equal(board.isValidMove(2, 1), false);
+  assert(!board.isValidMove(2, 1));
   var intersection = board.get(2, 1);
-  assert.equal(intersection.sensibleMove, false);
+  assert(!intersection.sensibleMove);
   assert(!board.play(2, 1));
 
   // Play elsewhere.
@@ -200,19 +200,24 @@ var Board = Baduk.Board;
   // xo.ox.xo.o
   //  xo ox xo
 
-  // Try to play the Ko.
-  assert(!board.isValidMove(2, 1));
-  var intersection = board.get(2, 1);
+  board.play(2, 1); board.play(5, 1);
+  //  xo ox xo
+  // x.xo.oxo o
+  //  xo ox xo
+
+  // Try to play the Superko.
+  assert(!board.isValidMove(8, 1));
+  var intersection = board.get(8, 1);
   assert(!intersection.sensibleMove);
-  assert(!board.play(2, 1));
+  assert(!board.play(8, 1));
 
   // Play elsewhere.
   assert(board.play(0, 0));
   board.pass();
 
   // Play the Ko again.
-  assert(board.isValidMove(2, 1));
-  var intersection = board.get(2, 1);
+  assert(board.isValidMove(8, 1));
+  var intersection = board.get(8, 1);
   assert(intersection.sensibleMove);
-  assert(board.play(2, 1));
+  assert(board.play(8, 1));
 }
