@@ -30,6 +30,12 @@
       this.reset();
     },
 
+    duplicate: function() {
+      var sgf = new SGF();
+      sgf.content = duplicate(this.content);
+      return sgf;
+    },
+
     // Set the board back to the starting position.
     reset: function() {
       this.currentNodeIdx = 0;
@@ -605,6 +611,25 @@
   var IDENT_LIST_POINT_SIMPLETEXT = 11;
   var IDENT_SIMPLETEXT_SIMPLETEXT = 12;
   var IDENT_NUMBER_SIMPLETEXT = 13;
+
+  var duplicate = function(value) {
+    if (v == null || typeof v === 'boolean' || typeof v === 'number'
+        || typeof v === 'string') {
+      return v;
+    } else if (Object(v) instanceof Array) {
+      return v.slice().map(duplicate);
+    } else {
+      return duplicateObject(v);
+    }
+  };
+
+  var duplicateObject = function(obj) {
+    var res = Object.create(null);
+    for (var key in obj) {
+      res[key] = cloneValue(obj[key]);
+    }
+    return res;
+  };
 
   exports.Board = Board;
   exports.SGF = SGF;
