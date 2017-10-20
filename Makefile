@@ -27,12 +27,22 @@ sgf/kgs4d/:
 	rm -r sgf/kgs4d-tar
 
 sgf/alphago/:
-	mkdir -p sgf/alphago; \
-	cd sgf/alphago; \
-	cat ../lists/alphago | \
-		(while read sgf; do \
-			echo "$$sgf"; \
-			curl -O "$$sgf"; \
-		done)
+	mkdir -p sgf/alphago/download; \
+	cd sgf/alphago/download; \
+	curl -s http://www.alphago-games.com \
+		| grep -Eo '/static/games[^"]+.zip' \
+		| (while read zip; do \
+			curl -sO 'http://www.alphago-games.com'"$$zip"; \
+			zip_name=$$(basename "$$zip"); \
+			unzip -q "$$zip_name"; \
+			rm "$$zip_name"; \
+			ls | (while read sgf; do \
+				sgf_name="$${zip_name::-4}"-"$$sgf"; \
+				echo "$$sgf_name"; \
+				mv "$$sgf" ../"$$sgf_name"; \
+			done); \
+		done); \
+	cd ..; \
+	rmdir download
 
 .PHONY: clean test
