@@ -118,14 +118,13 @@ Mask.prototype = {
     }
   },
   matchBits: function(board, x, y) {
-    //var matchBits = 0;
     var matchBits = '';
     var color = +board.nextPlayingColor;
     var mask = this.mask;
     var maskLength = mask.length|0;
     for (var i = 0; i < maskLength; i++) {
       var neighbor = board.get(x + mask[i][0], y + mask[i][1]);
-      matchBits += String.fromCharCode(this.bitsFromIntersection(neighbor, color)|0);
+      matchBits += String.fromCharCode(97 + this.bitsFromIntersection(neighbor, color));
     }
     return matchBits;
   },
@@ -226,12 +225,10 @@ Mask.prototype = {
   },
   toJSON: function() {
     var patterns = [];
-    var counter = 0;
     var self = this;
     this.map.forEach(function(stats, bitMask) {
-      if (self.wilsonScore(stats.moveMatches, stats.matches) > 0.1) {
+      if (self.wilsonScore(stats.moveMatches, stats.matches) > 0) {
         patterns.push([bitMask, stats.moveMatches, stats.matches]);
-        counter++;
       }
     });
     return patterns;
