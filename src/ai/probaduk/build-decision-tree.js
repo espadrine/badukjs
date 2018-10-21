@@ -8,15 +8,15 @@ var DecisionTree = require('./decision-tree.js');
 process.argv.shift();  // node
 if (/build-decision-tree/.test(process.argv[0])) { process.argv.shift(); }
 if (process.argv[0] === '-h' || process.argv[0] === '--help') {
-  console.log("node build-decision-tree.js [games dir] [training size] " +
+  console.log("node build-decision-tree.js [games dir] [batch size] " +
     "[validation size] [tree size] > tree.json");
   process.exit(0);
 }
 var gamesDir = process.argv[0] || path.join(__dirname, "..", "..", "..", "sgf", "alphago");
-var trainingSize = +process.argv[1] || 4;
+var batchSize = +process.argv[1] || 5;
 var validationSize = +process.argv[2] || 20;
 var treeSize = +process.argv[3] || 300;
-console.error(gamesDir, trainingSize, validationSize, treeSize);
+console.error(gamesDir, batchSize, validationSize, treeSize);
 
 function parseGame(game) {
   var sgfContent = String(fs.readFileSync(path.join(gamesDir, game)));
@@ -50,6 +50,7 @@ function computeSgf(sgf, analyseMove) {
 }
 
 var games = fs.readdirSync(gamesDir);
+var trainingSize = batchSize * treeSize;
 var trainingGames = games.slice(0, trainingSize);
 var validationGames = games.slice(trainingSize, trainingSize + validationSize);
 var t0 = +Date.now();
@@ -59,8 +60,14 @@ var t1 = +Date.now();
 console.error('parsing: ' + (t1 - t0).toPrecision(3) + 'ms');
 
 t0 = +Date.now();
+var trainingIndex = 0;
 var tree = DecisionTree.learn(treeSize, function train(analyseMove) {
-  trainingSgf.forEach(function(sgf) { computeSgf(sgf, analyseMove); });
+  for (var i = 0; i < batchSize; i++) {
+    var sgf = trainingSgf[trainingIndex];
+    computeSgf(sgf, analyseMove);
+    trainingIndex = (trainingIndex + 1) % trainingSize;
+  }
+  //trainingSgf.forEach(function(sgf) { computeSgf(sgf, analyseMove); });
 });
 t1 = +Date.now();
 console.error('training: ' + (t1 - t0).toPrecision(3) + 'ms');
