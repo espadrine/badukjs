@@ -18,4 +18,5 @@ var Board = Baduk.Board;
   assert.equal(board.get(1, 0).color, Board.BLACK);
   assert.equal(board.get(0, 1).color, Board.WHITE);
   assert.equal(board.get(1, 1).color, Board.BLACK);
+  console.log(board.toString());
 }
