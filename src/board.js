@@ -480,15 +480,15 @@
     },
 
     toString: function() {
-      var rows = "  ";
+      var rows = " ";
       for (var i = 0; i < this.size; i++) {
-        rows += coordFromNum(i);
+        rows +=  " " + coordFromNum(i);
       }
       rows += "\n ┌";
-      for (var i = 0; i < this.size; i++) {
-        rows += "─";
+      for (var i = 0; i < this.size - 1; i++) {
+        rows += "──";
       }
-      rows += "┐\n";
+      rows += "─┐\n";
       for (var y = 0; y < this.size; y++) {
         rows += coordFromNum(y) + "│";
         for (var x = 0; x < this.size; x++) {
@@ -500,14 +500,15 @@
           } else if (intersection.color === Board.WHITE) {
             rows += "○";
           }
+          if (x < this.size - 1) { rows += " "; }
         }
         rows += "│\n";
       }
       rows += " └";
-      for (var i = 0; i < this.size; i++) {
-        rows += "─";
+      for (var i = 0; i < this.size - 1; i++) {
+        rows += "──";
       }
-      rows += "┘\n";
+      rows += "─┘\n";
       rows += "Captured: black " + this.captures[Board.BLACK] +
                       ", white " + this.captures[Board.WHITE];
       return rows;
