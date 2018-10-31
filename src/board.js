@@ -496,9 +496,17 @@
           if (intersection.color === Board.EMPTY) {
             rows += " ";
           } else if (intersection.color === Board.BLACK) {
-            rows += "●";
+            if (intersection.turnPlayed === this.numMoves - 1) {
+              rows += "◆";
+            } else {
+              rows += "●";
+            }
           } else if (intersection.color === Board.WHITE) {
-            rows += "○";
+            if (intersection.turnPlayed === this.numMoves - 1) {
+              rows += "◇";
+            } else {
+              rows += "○";
+            }
           }
           if (x < this.size - 1) { rows += " "; }
         }
