@@ -517,8 +517,8 @@
         rows += "──";
       }
       rows += "─┘\n";
-      rows += "Captured: black " + this.captures[Board.BLACK] +
-                      ", white " + this.captures[Board.WHITE];
+      rows += "Captured: ● " + this.captures[Board.WHITE] +
+                       " ○ " + this.captures[Board.BLACK];
       return rows;
     },
   };

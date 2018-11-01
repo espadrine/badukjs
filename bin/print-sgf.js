@@ -31,5 +31,5 @@ process.stdin.on('end', function() {
   }
   console.log(sgf.board.toString());
   var scores = sgf.board.scores();
-  console.log("Black: " + scores.black + ", White: " + scores.white);
+  console.log("Score: ● " + scores.black + " ○ " + scores.white);
 });
