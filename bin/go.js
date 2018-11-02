@@ -67,6 +67,16 @@ process.argv.forEach(function(arg) {
   } else if (/^--black=.*$/.test(arg)) {
     var match = /^--black=(.*)$/.exec(arg);
     blackPlayer = buildPlayer(match[1]);
+  } else if (arg === "--help" || arg === "-h") {
+    console.log("Play a Go game in the terminal.");
+    console.log("By default, stdin receives commands.");
+    console.log("Usage: go.js");
+    console.log("  --help, -h: print this help message.");
+    console.log("  --black=, --white=: generate moves from a source.");
+    console.log("    Either a process, " +
+      "eg. --black=\"gnugo --color white --mode ascii\"");
+    console.log("    Or an AI, eg. --white=probaduk:../tree.json");
+    process.exit(0);
   }
 });
 
