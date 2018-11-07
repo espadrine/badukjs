@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 var Baduk = require('../src/sgf.js');
 
-var everyStep = false;
+var everyStep = false, analyze = false;
 process.argv.forEach(function(arg) {
   if (arg === "--steps") { everyStep = true; }
+  else if (arg === "--analyze") { analyze = true; }
   else if (arg === "--help" || arg === "-h") {
     console.log("Display a saved Go game in the terminal.");
     console.log("Usage: print-sgf.js <game.sgf");
@@ -22,8 +23,10 @@ process.stdin.on('end', function() {
   var sgf = new Baduk.SGF();
   sgf.parse(sgfContent, {error: function(err) { console.error(err); }});
   if (everyStep) {
+    if (analyze) { sgf.board.analyze(); }
     console.log(sgf.board.toString());
     while (sgf.step()) {
+      if (analyze) { sgf.board.analyze(); }
       console.log(sgf.board.toString());
     }
   } else {

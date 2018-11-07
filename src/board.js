@@ -479,6 +479,16 @@
       }
     },
 
+    // Perform computation to annotate the board and its intersections with
+    // analysis information.
+    analyze: function() {
+      for (var y = 0; y < this.size; y++) {
+        for (var x = 0; x < this.size; x++) {
+          this.isValidMove(x, y);
+        }
+      }
+    },
+
     toString: function() {
       var rows = " ";
       for (var i = 0; i < this.size; i++) {
@@ -494,7 +504,8 @@
         for (var x = 0; x < this.size; x++) {
           var intersection = this.directGet(x, y);
           if (intersection.color === Board.EMPTY) {
-            rows += " ";
+            if (!intersection.sensibleMove) { rows += "×"; }
+            else { rows += " "; }
           } else if (intersection.color === Board.BLACK) {
             if (intersection.turnPlayed === this.numMoves - 1) {
               rows += "◆";
