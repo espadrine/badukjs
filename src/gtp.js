@@ -25,7 +25,7 @@
         // TODO output error.
         return;
       }
-      this.interpreter[inst.command](this, inst);
+      return this.interpreter[inst.command](this, inst);
     },
 
     parse(instruction) {
@@ -40,19 +40,20 @@
 
     // ❷ Interpreter.
 
+    // All functions take gtp, command = {id, command, args, errors}.
+    // They return a Response.
     interpreter: {
       play: function(gtp, command) {
         var vertex = command.args.move.vertex;
         var color = command.args.move.color;
         if (gtp.stream.errors.length > 0) {
-          // TODO output 'invalid move'
-          return;
+          return new Response(Response.error, 'invalid move', command.id);
         }
         // pass
         if (vertex.length < 0) { return; }
         gtp.board.nextPlayingColor = color;
         gtp.board.play(vertex[0], vertex[1]);
-        // TODO output an empty response.
+        return new Response(Response.result, '', command.id);
       },
     },
 
@@ -60,8 +61,8 @@
 
     // (optional id) command_name (optional arguments) newline
     // Returns {id, command, args, errors}.
-    // - args is an object of parameters to the command whose type depends on
-    // the command.
+    // - args is an object of parameters to the command whose type depends
+    // on the command.
     command(stream) {
       stream.whitespace();
 
@@ -167,6 +168,36 @@
       return [c0, c1];
     },
   };
+
+  function Response(type, msg, id = null) {
+    this.type = type;
+    this.message = msg;
+    this.id = id;
+  }
+
+  Response.prototype = {
+    toString: function() {
+      var id = (this.id != null? String(this.id): '');
+      var type;
+      if (this.type === Response.result) { type = '=';
+      } else if (this.type === Response.error) { type = '?';
+      } else {
+        return '?' + id + ' ' +
+          'invalid response while processing message: '
+          + this.message;
+      }
+      var message;
+      if (this.message.length === 0) {
+        message = this.message;
+      } else {
+        message = ' ' + this.message;
+      }
+      return type + id + message;
+    },
+  };
+
+  Response.result = 0;
+  Response.error  = 1;
 
   function Stream(string) {
     this.string = string;

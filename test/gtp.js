@@ -8,15 +8,21 @@ var Board = Baduk.Board;
   var board = new Board();
   var gtp = new GTP({board});
 
-  gtp.exec('play white a19');
-  gtp.exec('play B B19');
-  gtp.exec('play w a18');
-  gtp.exec('play bLACK B18');
+  var responses = [];
+  responses.push(gtp.exec('play white a19'));
+  responses.push(gtp.exec('play B B19'));
+  responses.push(gtp.exec('play w a18'));
+  responses.push(gtp.exec('play bLACK B18'));
 
-  assert.equal(gtp.stream.errors.length, 0);
-  assert.equal(board.get(0, 0).color, Board.WHITE);
-  assert.equal(board.get(1, 0).color, Board.BLACK);
-  assert.equal(board.get(0, 1).color, Board.WHITE);
-  assert.equal(board.get(1, 1).color, Board.BLACK);
-  console.log(board.toString());
+  assert.strictEqual(gtp.stream.errors.length, 0);
+  assert.strictEqual(board.get(0, 0).color, Board.WHITE);
+  assert.strictEqual(board.get(1, 0).color, Board.BLACK);
+  assert.strictEqual(board.get(0, 1).color, Board.WHITE);
+  assert.strictEqual(board.get(1, 1).color, Board.BLACK);
+
+  // Check responses.
+  for (var i = 0; i < 3; i++) {
+    assert.strictEqual(responses[i].toString(), '=',
+      'Play response ' + (i + 1) + ' should be empty');
+  }
 }
