@@ -72,6 +72,7 @@
         stream.errors = errors;  // Remove errors if optional.
       }
 
+      stream.whitespace();
       var command = stream.parse(/^[a-zA-Z_]+/);
       if (command === null) {
         stream.error('Invalid command name ' + command);

@@ -12,7 +12,7 @@ var Board = Baduk.Board;
   responses.push(gtp.exec('play white a19'));
   responses.push(gtp.exec('play B B19'));
   responses.push(gtp.exec('play w a18'));
-  responses.push(gtp.exec('play bLACK B18'));
+  responses.push(gtp.exec('4 play bLACK B18'));
 
   assert.strictEqual(gtp.stream.errors.length, 0);
   assert.strictEqual(board.get(0, 0).color, Board.WHITE);
@@ -25,4 +25,6 @@ var Board = Baduk.Board;
     assert.strictEqual(responses[i].toString(), '=',
       'Play response ' + (i + 1) + ' should be empty');
   }
+  assert.strictEqual(responses[3].toString(), '=4',
+    'Play response 4 should be empty; with id');
 }
