@@ -27,4 +27,10 @@ var Board = Baduk.Board;
   }
   assert.strictEqual(responses[3].toString(), '=4',
     'Play response 4 should be empty; with id');
+
+  // Test errors.
+
+  var response = gtp.exec('play bLACK i883');
+  assert.strictEqual(response.toString(), '? illegal move',
+    'Play response with i abscissa should be an error');
 }

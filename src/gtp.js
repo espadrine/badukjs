@@ -47,7 +47,7 @@
         var vertex = command.args.move.vertex;
         var color = command.args.move.color;
         if (gtp.stream.errors.length > 0) {
-          return new Response(Response.error, 'invalid move', command.id);
+          return new Response(Response.error, 'illegal move', command.id);
         }
         // pass
         if (vertex.length < 0) { return; }
