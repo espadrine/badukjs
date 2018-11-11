@@ -33,4 +33,8 @@ var Board = Baduk.Board;
   var response = gtp.exec('play bLACK i883');
   assert.strictEqual(response.toString(), '? illegal move',
     'Play response with i abscissa should be an error');
+
+  var response = gtp.exec('play w a0');
+  assert.strictEqual(response.toString(), '? illegal move',
+    'Play response with 0 ordinate should be an error');
 }

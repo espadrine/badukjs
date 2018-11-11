@@ -32,7 +32,10 @@
       if (this.stream === undefined) {
         this.stream = new Stream(instruction);
       } else {
+        var yetToConsume = this.stream.string.length - this.stream.index
+          + 1;  // +1 to consume the forthcoming newline.
         this.stream.string += '\n' + instruction;
+        this.stream.consume(yetToConsume);
         this.stream.errors = [];  // Clear errors.
       }
       return this.command(this.stream);
@@ -160,7 +163,7 @@
       }
 
       // Now, parse the ordinate.
-      var p1 = stream.parse(/^[0-9][0-9]?/);
+      var p1 = stream.parse(/^[1-9][0-9]?/);
       if (p1 === null) {
         stream.error('Invalid coordinate ordinate ' + p1);
         return [];
