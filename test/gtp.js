@@ -37,4 +37,8 @@ var Board = Baduk.Board;
   var response = gtp.exec('play w a0');
   assert.strictEqual(response.toString(), '? illegal move',
     'Play response with 0 ordinate should be an error');
+
+  var response = gtp.exec('play gray a5');
+  assert.strictEqual(response.toString(), '? illegal move',
+    'Play response with invalid color should be an error');
 }
