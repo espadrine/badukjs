@@ -45,4 +45,8 @@ var Board = Baduk.Board;
   var response = gtp.exec('8 play gray a5');
   assert.strictEqual(response.toString(), '?8 illegal move',
     'Play response with id should be an error with id');
+
+  var response = gtp.exec('9 play b pass');
+  assert.strictEqual(response.toString(), '=9',
+    'Play pass response with id');
 }

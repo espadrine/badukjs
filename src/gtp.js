@@ -52,10 +52,13 @@
         }
         var vertex = command.args.move.vertex;
         var color = command.args.move.color;
-        // pass
-        if (vertex.length < 0) { return; }
         gtp.board.nextPlayingColor = color;
-        gtp.board.play(vertex[0], vertex[1]);
+        // pass
+        if (vertex.length <= 0) {
+          gtp.board.pass();
+        } else {
+          gtp.board.play(vertex[0], vertex[1]);
+        }
         return new Response(Response.result, '', command.id);
       },
     },
