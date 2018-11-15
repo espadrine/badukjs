@@ -50,3 +50,13 @@ var Board = Baduk.Board;
   assert.strictEqual(response.toString(), '=9',
     'Play pass response with id');
 }
+
+// Test invalid command
+{
+  var board = new Board();
+  var gtp = new GTP({board});
+
+  var response = gtp.exec('invalid_command');
+  assert.strictEqual(response.toString(), '? unknown command',
+    'Unknown command');
+}

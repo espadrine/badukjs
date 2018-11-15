@@ -21,9 +21,9 @@
 
     exec(instruction) {
       var inst = this.parse(instruction);
+      // 3.6 Error message for unknown command.
       if (this.interpreter[inst.command] === undefined) {
-        // TODO output error.
-        return;
+        return new Response(Response.error, 'unknown command', inst.id);
       }
       return this.interpreter[inst.command](this, inst);
     },
@@ -46,6 +46,9 @@
     // All functions take gtp, command = {id, command, args, errors}.
     // They return a Response.
     interpreter: {
+
+      // 6.3.3 Core Play Commands
+
       play: function(gtp, command) {
         if (gtp.stream.errors.length > 0) {
           return new Response(Response.error, 'illegal move', command.id);
@@ -61,6 +64,7 @@
         }
         return new Response(Response.result, '', command.id);
       },
+
     },
 
     // ❸ Parser.
