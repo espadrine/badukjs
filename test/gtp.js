@@ -59,4 +59,8 @@ var Board = Baduk.Board;
   var response = gtp.exec('invalid_command');
   assert.strictEqual(response.toString(), '? unknown command',
     'Unknown command');
+
+  var response = gtp.exec('2 invalid_command');
+  assert.strictEqual(response.toString(), '?2 unknown command',
+    'Unknown command with id');
 }
