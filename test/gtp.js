@@ -51,6 +51,16 @@ var Board = Baduk.Board;
     'Play pass response with id');
 }
 
+// Test administrative commands
+{
+  var board = new Board();
+  var gtp = new GTP({board});
+
+  var response = gtp.exec('protocol_version');
+  assert.strictEqual(response.toString(), '= 2',
+    'Protocol version should be 2');
+}
+
 // Test invalid command
 {
   var board = new Board();
