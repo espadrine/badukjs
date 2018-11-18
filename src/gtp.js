@@ -53,6 +53,10 @@
         return new Response(Response.result, '2', command.id);
       },
 
+      name: function(gtp, command) {
+        return new Response(Response.result, 'badukjs', command.id);
+      },
+
       // 6.3.3 Core Play Commands
 
       play: function(gtp, command) {
@@ -99,6 +103,7 @@
       // Depending on the command, we want to parse the arguments in a
       // special way.
       if (command === 'protocol_version') {
+      } else if (command === 'name') {
       } else if (command === 'play') {
         var move = this.move(stream);
         if (move !== null) { args.move = move; }

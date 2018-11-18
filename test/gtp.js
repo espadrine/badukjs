@@ -59,6 +59,10 @@ var Board = Baduk.Board;
   var response = gtp.exec('protocol_version');
   assert.strictEqual(response.toString(), '= 2',
     'Protocol version should be 2');
+
+  var response = gtp.exec('name');
+  assert.strictEqual(response.toString(), '= badukjs',
+    'Name should be badukjs');
 }
 
 // Test invalid command
