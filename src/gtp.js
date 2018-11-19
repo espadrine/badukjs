@@ -57,6 +57,10 @@
         return new Response(Response.result, 'badukjs', command.id);
       },
 
+      version: function(gtp, command) {
+        return new Response(Response.result, GTP.version, command.id);
+      },
+
       // 6.3.3 Core Play Commands
 
       play: function(gtp, command) {
@@ -191,6 +195,8 @@
       return [c0, c1];
     },
   };
+
+  GTP.version = '0.1';
 
   function Response(type, msg, id = null) {
     this.type = type;
