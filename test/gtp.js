@@ -67,6 +67,18 @@ var Board = Baduk.Board;
   var response = gtp.exec('version');
   assert.strictEqual(response.toString(), '= ' + GTP.version,
     'Version should match');
+
+  var response = gtp.exec('known_command known_command');
+  assert.strictEqual(response.toString(), '= true',
+    'known_command should be a known command');
+
+  var response = gtp.exec('known_command unknown_command');
+  assert.strictEqual(response.toString(), '= false',
+    'unknown_command should be an unknown command');
+
+  var response = gtp.exec('known_command');
+  assert.strictEqual(response.toString(), '= false',
+    'The empty command should be an unknown command');
 }
 
 // Test invalid command

@@ -61,6 +61,12 @@
         return new Response(Response.result, GTP.version, command.id);
       },
 
+      known_command: function(gtp, command) {
+        var isKnown =
+          gtp.interpreter[command.args.command_name] !== undefined;
+        return new Response(Response.result, String(isKnown), command.id);
+      },
+
       // 6.3.3 Core Play Commands
 
       play: function(gtp, command) {
@@ -106,13 +112,12 @@
 
       // Depending on the command, we want to parse the arguments in a
       // special way.
-      if (command === 'protocol_version') {
-      } else if (command === 'name') {
+      if (command === 'known_command') {
+        var cmd = this.string(stream);
+        if (cmd !== null) { args.command_name = cmd; }
       } else if (command === 'play') {
         var move = this.move(stream);
         if (move !== null) { args.move = move; }
-      } else {
-        // TODO
       }
 
       return {
@@ -130,6 +135,16 @@
         return null;
       }
       return +int;
+    },
+
+    // Return a string, parsing only non-whitespace.
+    string(stream) {
+      var str = stream.parse(/^\S+/);
+      if (str === null) {
+        stream.error('Invalid string');
+        return null;
+      }
+      return str;
     },
 
     // eg. `white d16`.
