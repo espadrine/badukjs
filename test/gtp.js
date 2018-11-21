@@ -79,6 +79,10 @@ var Board = Baduk.Board;
   var response = gtp.exec('known_command');
   assert.strictEqual(response.toString(), '= false',
     'The empty command should be an unknown command');
+
+  var response = gtp.exec('list_commands');
+  assert(/^= protocol_version\n[a-z_\n]+\nplay/.test(response.toString()),
+    'The list_commands command lists play');
 }
 
 // Test invalid command

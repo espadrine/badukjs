@@ -67,6 +67,11 @@
         return new Response(Response.result, String(isKnown), command.id);
       },
 
+      list_commands: function(gtp, command) {
+        var commands = Object.keys(gtp.interpreter).join('\n');
+        return new Response(Response.result, commands, command.id);
+      },
+
       // 6.3.3 Core Play Commands
 
       play: function(gtp, command) {
