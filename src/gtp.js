@@ -72,6 +72,11 @@
         return new Response(Response.result, commands, command.id);
       },
 
+      // 6.3.2 Setup Commands
+
+      boardsize: function(gtp, command) {
+      },
+
       // 6.3.3 Core Play Commands
 
       play: function(gtp, command) {
@@ -218,6 +223,7 @@
 
   GTP.version = '0.1';
 
+  // TODO: keep original GTP-typed information.
   function Response(type, msg, id = null) {
     this.type = type;
     this.message = msg;
@@ -241,7 +247,7 @@
       } else {
         message = ' ' + this.message;
       }
-      return type + id + message;
+      return type + id + message + '\n\n';
     },
   };
 

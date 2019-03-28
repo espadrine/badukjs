@@ -22,32 +22,32 @@ var Board = Baduk.Board;
 
   // Check responses.
   for (var i = 0; i < 3; i++) {
-    assert.strictEqual(responses[i].toString(), '=',
+    assert.strictEqual(responses[i].toString(), '=\n\n',
       'Play response ' + (i + 1) + ' should be empty');
   }
-  assert.strictEqual(responses[3].toString(), '=4',
+  assert.strictEqual(responses[3].toString(), '=4\n\n',
     'Play response 4 should be empty; with id');
 
   // Test errors.
 
   var response = gtp.exec('play bLACK i883');
-  assert.strictEqual(response.toString(), '? illegal move',
+  assert.strictEqual(response.toString(), '? illegal move\n\n',
     'Play response with i abscissa should be an error');
 
   var response = gtp.exec('play w a0');
-  assert.strictEqual(response.toString(), '? illegal move',
+  assert.strictEqual(response.toString(), '? illegal move\n\n',
     'Play response with 0 ordinate should be an error');
 
   var response = gtp.exec('play gray a5');
-  assert.strictEqual(response.toString(), '? illegal move',
+  assert.strictEqual(response.toString(), '? illegal move\n\n',
     'Play response with invalid color should be an error');
 
   var response = gtp.exec('8 play gray a5');
-  assert.strictEqual(response.toString(), '?8 illegal move',
+  assert.strictEqual(response.toString(), '?8 illegal move\n\n',
     'Play response with id should be an error with id');
 
   var response = gtp.exec('9 play b pass');
-  assert.strictEqual(response.toString(), '=9',
+  assert.strictEqual(response.toString(), '=9\n\n',
     'Play pass response with id');
 }
 
@@ -57,27 +57,27 @@ var Board = Baduk.Board;
   var gtp = new GTP({board});
 
   var response = gtp.exec('protocol_version');
-  assert.strictEqual(response.toString(), '= 2',
+  assert.strictEqual(response.toString(), '= 2\n\n',
     'Protocol version should be 2');
 
   var response = gtp.exec('name');
-  assert.strictEqual(response.toString(), '= badukjs',
+  assert.strictEqual(response.toString(), '= badukjs\n\n',
     'Name should be badukjs');
 
   var response = gtp.exec('version');
-  assert.strictEqual(response.toString(), '= ' + GTP.version,
+  assert.strictEqual(response.toString(), '= ' + GTP.version + '\n\n',
     'Version should match');
 
   var response = gtp.exec('known_command known_command');
-  assert.strictEqual(response.toString(), '= true',
+  assert.strictEqual(response.toString(), '= true\n\n',
     'known_command should be a known command');
 
   var response = gtp.exec('known_command unknown_command');
-  assert.strictEqual(response.toString(), '= false',
+  assert.strictEqual(response.toString(), '= false\n\n',
     'unknown_command should be an unknown command');
 
   var response = gtp.exec('known_command');
-  assert.strictEqual(response.toString(), '= false',
+  assert.strictEqual(response.toString(), '= false\n\n',
     'The empty command should be an unknown command');
 
   var response = gtp.exec('list_commands');
@@ -91,10 +91,10 @@ var Board = Baduk.Board;
   var gtp = new GTP({board});
 
   var response = gtp.exec('invalid_command');
-  assert.strictEqual(response.toString(), '? unknown command',
+  assert.strictEqual(response.toString(), '? unknown command\n\n',
     'Unknown command');
 
   var response = gtp.exec('2 invalid_command');
-  assert.strictEqual(response.toString(), '?2 unknown command',
+  assert.strictEqual(response.toString(), '?2 unknown command\n\n',
     'Unknown command with id');
 }
