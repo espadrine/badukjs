@@ -9,6 +9,7 @@ clean:
 test:
 	node test/board.js
 	node test/sgf.js
+	node test/gtp.js
 
 sgf/kgs4d/:
 	if [ ! -e sgf/kgs4d-tar ]; then \
