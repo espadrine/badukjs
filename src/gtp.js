@@ -85,12 +85,11 @@
         }
         var vertex = command.args.move.vertex;
         var color = command.args.move.color;
-        gtp.board.nextPlayingColor = color;
-        // pass
-        if (vertex.length <= 0) {
+        gtp.board.nextPlayingColor = color.value;
+        if (vertex.abscissa === null) {
           gtp.board.pass();
         } else {
-          gtp.board.play(vertex[0], vertex[1]);
+          gtp.board.play(vertex.abscissa, vertex.ordinate);
         }
         return new Response(Response.result, '', command.id);
       },
@@ -144,7 +143,7 @@
         stream.error('Invalid int ' + int);
         return null;
       }
-      return +int;
+      return new GTPInt(+int);
     },
 
     // Return a string, parsing only non-whitespace.
@@ -154,7 +153,7 @@
         stream.error('Invalid string');
         return null;
       }
-      return str;
+      return new GTPString(str);
     },
 
     // eg. `white d16`.
@@ -170,7 +169,7 @@
         stream.error('Invalid vertex ' + vertex + ' in move');
         return null;
       }
-      return {color, vertex};
+      return new GTPMove(color, vertex);
     },
 
     // eg. `white`
@@ -181,8 +180,9 @@
         stream.error('Invalid color ' + color);
         return null;
       }
-      return (color[0] === 'w' || color[0] === 'W')? Board.WHITE:
-          Board.BLACK;
+      return (color[0] === 'w' || color[0] === 'W')?
+          new GTPColor(Board.WHITE):
+          new GTPColor(Board.BLACK);
     },
 
     // Letter/number combination (eg. f5), or "pass".
@@ -191,13 +191,13 @@
     // eg. `d16`, or `pass`.
     vertex(stream) {
       var pass = stream.parse(/^pass\b/i);
-      if (pass !== null) { return []; }
+      if (pass !== null) { return new GTPVertex(); }
 
       // Parse the first coordinate, corresponding to abscissa.
       var p0 = stream.parse(/^[a-zA-Z]/);
       if (p0 === null || p0 === 'I' || p0 === 'i') {
         stream.error('Invalid coordinate abscissa ' + p0);
-        return [];
+        return new GTPVertex();
       }
       var c0;
       if (/^[a-i]$/.test(p0)) {
@@ -214,12 +214,70 @@
       var p1 = stream.parse(/^[1-9][0-9]?/);
       if (p1 === null) {
         stream.error('Invalid coordinate ordinate ' + p1);
-        return [];
+        return new GTPVertex();
       }
       var c1 = 19 - p1;
-      return [c0, c1];
+      return new GTPVertex(c0, c1);
     },
   };
+
+  // GTP Types.
+  //
+
+  function GTPInt(value) { this.value = +value; };
+  GTPInt.prototype = {
+    toString() { return String(this.value); },
+    valueOf() { return this.value; },
+  };
+
+  function GTPString(value) { this.value = String(value); }
+  GTPString.prototype = {
+    toString() { return this.value; },
+    valueOf() { return this.value; },
+  };
+
+  function GTPMove(color, vertex) {
+    this.color = color;
+    this.vertex = vertex;
+  }
+  GTPMove.prototype = {
+    toString() { return this.color + ' ' + this.vertex; },
+  };
+
+  function GTPColor(value) { this.value = +value; }
+  GTPColor.prototype = {
+    toString() {
+      switch(this.value) {
+        case Board.WHITE: return 'white';
+        case Board.BLACK: return 'black';
+      }
+    },
+    valueOf() { return this.value; },
+  };
+
+  function GTPVertex(abscissa = null, ordinate = null) {
+    if (abscissa !== null) { this.abscissa = +abscissa; }
+    if (ordinate !== null) {  this.ordinate = +ordinate; }
+  }
+  GTPVertex.prototype = {
+    toString() {
+      if (this.abscissa === null) { return 'pass';
+      } else {
+        var charCode = 97 + this.abscissa;
+        if (charCode >= 97 + 9) { charCode++; }
+        var abs = String.fromCharCode(charCode);
+        var ord = String(19 - this.ordinate);
+        return abs + ord;
+      }
+    },
+    valueOf() { return [this.abscissa, this.ordinate]; },
+  };
+
+  GTP.Int = GTPInt;
+  GTP.String = GTPString;
+  GTP.Move = GTPMove;
+  GTP.Move = GTPColor;
+  GTP.Move = GTPVertex;
 
   GTP.version = '0.1';
 
